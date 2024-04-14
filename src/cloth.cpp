@@ -6,6 +6,7 @@
 #include "cloth.h"
 #include "collision/plane.h"
 #include "collision/sphere.h"
+#include "collision/dune.h"
 
 using namespace std;
 

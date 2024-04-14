@@ -15,6 +15,7 @@
 #include "CGL/CGL.h"
 #include "collision/plane.h"
 #include "collision/sphere.h"
+#include "collision/dune.h"
 #include "cloth.h"
 #include "clothSimulator.h"
 #include "json.hpp"
