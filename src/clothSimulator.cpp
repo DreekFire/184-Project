@@ -254,6 +254,9 @@ void ClothSimulator::drawContents() {
 
   const UserShader& active_shader = shaders[active_shader_idx];
 
+  // grab the sand shader from the end of the list
+  const UserShader& sand_shader = shaders[shaders.size() - 1];
+
   GLShader &shader = *active_shader.nanogui_shader;
   shader.bind();
 
@@ -284,7 +287,7 @@ void ClothSimulator::drawContents() {
     Vector3D cam_pos = camera.position();
     shader.setUniform("u_color", color, false);
     shader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
-    shader.setUniform("u_light_pos", Vector3f(0.5, 500, 2), false);
+    shader.setUniform("u_light_pos", Vector3f(150, 500, -700), false);
     shader.setUniform("u_light_intensity", Vector3f(200000, 200000, 200000), false);
     shader.setUniform("u_texture_1_size", Vector2f(m_gl_texture_1_size.x, m_gl_texture_1_size.y), false);
     shader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
@@ -305,7 +308,31 @@ void ClothSimulator::drawContents() {
   }
 
   for (CollisionObject *co : *collision_objects) {
-    co->render(shader);
+    GLShader &sandShader = *sand_shader.nanogui_shader;   
+    sandShader.bind();
+    sandShader.setUniform("u_model", model);
+    sandShader.setUniform("u_view_projection", viewProjection);
+    // Others
+    Vector3D cam_pos = camera.position();
+    sandShader.setUniform("u_color", color, false);
+    sandShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
+    sandShader.setUniform("u_light_pos", Vector3f(150, 500, -700), false);
+    sandShader.setUniform("u_light_intensity", Vector3f(200000, 200000, 200000), false);
+    sandShader.setUniform("u_texture_1_size", Vector2f(m_gl_texture_1_size.x, m_gl_texture_1_size.y), false);
+    sandShader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
+    sandShader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
+    sandShader.setUniform("u_texture_4_size", Vector2f(m_gl_texture_4_size.x, m_gl_texture_4_size.y), false);
+    // Textures
+    sandShader.setUniform("u_texture_1", 1, false);
+    sandShader.setUniform("u_texture_2", 2, false);
+    sandShader.setUniform("u_texture_3", 3, false);
+    sandShader.setUniform("u_texture_4", 4, false);
+
+    sandShader.setUniform("u_normal_scaling", m_normal_scaling, false);
+    sandShader.setUniform("u_height_scaling", m_height_scaling, false);
+
+    sandShader.setUniform("u_texture_cubemap", 5, false);
+    co->render(sandShader);
   }
 }
 
