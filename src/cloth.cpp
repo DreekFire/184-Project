@@ -184,7 +184,7 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
     Vector3D delta21 = pm2->position - pm1->position;
     Vector3D delta12 = pm1->position - pm2->position;
     double dist = delta21.norm();
-    double overage = dist - spring.rest_length * 1.1;
+    double overage = dist - spring.rest_length * 1.;
     if (overage > 0) {
         Vector3D correction1 = overage * delta21.unit();
         Vector3D correction2 = overage * delta12.unit();

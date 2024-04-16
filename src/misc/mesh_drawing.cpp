@@ -123,50 +123,68 @@ namespace CGL {
             uvs = MatrixXf(2, indices.size() * 3);
             tangents = MatrixXf(4, indices.size() * 3);
 
+            // Calculate normals and tangents per vertex
+            // Initialize accumulators for normals and tangents
+            std::vector<Vector3D> vertexNormals(vertices.size(), Vector3D(0, 0, 0));
+            std::vector<Vector3D> vertexTangents(vertices.size(), Vector3D(0, 0, 0));
+
             for (size_t i = 0; i < indices.size(); i += 3) {
-                double* vPtr1 = &vertices[VERTEX_SIZE * indices[i]];
-                double* vPtr2 = &vertices[VERTEX_SIZE * indices[i + 1]];
-                double* vPtr3 = &vertices[VERTEX_SIZE * indices[i + 2]];
+                // Calculate face normal
+                Vector3D p1(vertices[VERTEX_SIZE * indices[i] + VERTEX_OFFSET],
+                    vertices[VERTEX_SIZE * indices[i] + VERTEX_OFFSET + 1],
+                    vertices[VERTEX_SIZE * indices[i] + VERTEX_OFFSET + 2]);
+                Vector3D p2(vertices[VERTEX_SIZE * indices[i + 1] + VERTEX_OFFSET],
+                    vertices[VERTEX_SIZE * indices[i + 1] + VERTEX_OFFSET + 1],
+                    vertices[VERTEX_SIZE * indices[i + 1] + VERTEX_OFFSET + 2]);
+                Vector3D p3(vertices[VERTEX_SIZE * indices[i + 2] + VERTEX_OFFSET],
+                    vertices[VERTEX_SIZE * indices[i + 2] + VERTEX_OFFSET + 1],
+                    vertices[VERTEX_SIZE * indices[i + 2] + VERTEX_OFFSET + 2]);
+                Vector3D faceNormal = cross(p2 - p1, p3 - p1).unit();
 
-                Vector3D p1(vPtr1[VERTEX_OFFSET], vPtr1[VERTEX_OFFSET + 1], vPtr1[VERTEX_OFFSET + 2]);
-                Vector3D p2(vPtr2[VERTEX_OFFSET], vPtr2[VERTEX_OFFSET + 1], vPtr2[VERTEX_OFFSET + 2]);
-                Vector3D p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1], vPtr3[VERTEX_OFFSET + 2]);
+                // Accumulate normals and tangents for each vertex of the face
+                for (int j = 0; j < 3; ++j) {
+                    int vertexIndex = indices[i + j];
+                    vertexNormals[vertexIndex] += faceNormal;
+                    // Compute tangent if needed
+                    // vertexTangents[vertexIndex] += computeTangent(/* input parameters */);
+                }
+            }
 
-                // normals should be the normmal per vertex and not purely the position in space, calculate the normal of the triangle
-                // normal at the vertex is the average of the normals of the triangles that share the vertex
-                Vector3D n1 = cross(p2 - p1, p3 - p1).unit();
-                Vector3D n2 = n1;
-                Vector3D n3 = n1;
+            // Normalize normals and tangents
+            for (size_t i = 0; i < vertexNormals.size(); ++i)
+                vertexNormals[i].normalize();
+            // Similarly, normalize tangents if computed
 
-                Vector3D uv1(vPtr1[TCOORD_OFFSET], vPtr1[TCOORD_OFFSET + 1], 0);
-                Vector3D uv2(vPtr2[TCOORD_OFFSET], vPtr2[TCOORD_OFFSET + 1], 0);
-                Vector3D uv3(vPtr3[TCOORD_OFFSET], vPtr3[TCOORD_OFFSET + 1], 0);
+            // Populate matrices
+            for (size_t i = 0; i < indices.size(); i += 3) {
+                for (int j = 0; j < 3; ++j) {
+                    int vertexIndex = indices[i + j];
 
-                Vector3D t1(vPtr1[TANGEN_OFFSET], vPtr1[TANGEN_OFFSET + 1], vPtr1[TANGEN_OFFSET + 2]);
-                Vector3D t2(vPtr2[TANGEN_OFFSET], vPtr2[TANGEN_OFFSET + 1], vPtr2[TANGEN_OFFSET + 2]);
-                Vector3D t3(vPtr3[TANGEN_OFFSET], vPtr3[TANGEN_OFFSET + 1], vPtr3[TANGEN_OFFSET + 2]);
+                    // Copy positions
+                    positions.col(i + j) << vertices[VERTEX_SIZE * vertexIndex + VERTEX_OFFSET],
+                        vertices[VERTEX_SIZE * vertexIndex + VERTEX_OFFSET + 1],
+                        vertices[VERTEX_SIZE * vertexIndex + VERTEX_OFFSET + 2],
+                        1.0;
 
-                // Copy positions
-                positions.col(i) << p1.x, p1.y, p1.z, 1.0;
-                positions.col(i + 1) << p2.x, p2.y, p2.z, 1.0;
-                positions.col(i + 2) << p3.x, p3.y, p3.z, 1.0;
+                    // Copy normals
+                    normals.col(i + j) << vertexNormals[vertexIndex].x,
+                        vertexNormals[vertexIndex].y,
+                        vertexNormals[vertexIndex].z,
+                        0.0;
 
-                // Copy normals
-                normals.col(i) << n1.x, n1.y, n1.z, 0.0;
-                normals.col(i + 1) << n2.x, n2.y, n2.z, 0.0;
-                normals.col(i + 2) << n3.x, n3.y, n3.z, 0.0;
+                    // Copy UVs
+                    uvs.col(i + j) << vertices[VERTEX_SIZE * vertexIndex + TCOORD_OFFSET],
+                        vertices[VERTEX_SIZE * vertexIndex + TCOORD_OFFSET + 1];
 
-                // Copy UVs
-                uvs.col(i) << uv1.x, uv1.y;
-                uvs.col(i + 1) << uv2.x, uv2.y;
-                uvs.col(i + 2) << uv3.x, uv3.y;
-
-                // Copy tangents
-                tangents.col(i) << t1.x, t1.y, t1.z, 0.0;
-                tangents.col(i + 1) << t2.x, t2.y, t2.z, 0.0;
-                tangents.col(i + 2) << t3.x, t3.y, t3.z, 0.0;
+                    // Copy tangents if needed
+                     tangents.col(i + j) << vertexTangents[vertexIndex].x,
+                                            vertexTangents[vertexIndex].y,
+                                            vertexTangents[vertexIndex].z,
+                                            0.0;
+                }
             }
         }
+
 
         // function to detect collisions and ensure that object remains on the surface
         void MeshDrawing::collide(PointMass& pm) {
