@@ -336,7 +336,6 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
     } else if (key == DUNE) { // HANDLE A DUNE
         Vector3D point, normal;
         double friction;
-        string texturePath;
         int height, width;
 
         auto it_point = object.find("point");
@@ -365,23 +364,7 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
             incompleteObjectError("dune", "friction");
         }
 
-        auto it_height = object.find("height");
-        if (it_height != object.end()) {
-			height = *it_height;
-		}
-        else {
-			incompleteObjectError("dune", "height");
-		}
-
-        auto it_width = object.find("width");
-        if (it_width != object.end()) {
-            width = *it_width;
-        }
-        else {
-			incompleteObjectError("dune", "width");
-		}
-
-        Dune* d = new Dune(point, normal, friction, height, width);
+        Dune* d = new Dune(point, normal, friction);
         objects->push_back(d);
     } else { // PLANE
       Vector3D point, normal;

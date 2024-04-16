@@ -1,9 +1,6 @@
 #include "iostream"
 #include <nanogui/nanogui.h>
 
-
-#include "misc/file_utils.h"
-
 #include "../clothMesh.h"
 #include "../clothSimulator.h"
 #include "dune.h"
@@ -26,5 +23,5 @@ void Dune::collide(PointMass& pm) {
 
 void Dune::render(GLShader& shader) {
     // Render the dune mesh using MeshDrawing
-    m_meshDrawing.draw_mesh(shader, point, 1.0); // Adjust scale as needed
+    m_meshDrawing.drawMesh(shader, point, 1.0); // Adjust scale as needed
 }

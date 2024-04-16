@@ -23,102 +23,178 @@ using namespace std;
 namespace CGL {
     namespace Misc {
 
-        MeshDrawing::MeshDrawing(const char* texturePath, int width, int height)
-            : textureWidth(width)
-            , textureHeight(height) {
-            loadTexture(texturePath);
-            generateMeshFromTexture(texturePath);
+        MeshDrawing::MeshDrawing(const std::string& imagePath)
+            : imagePath(imagePath) {
+            loadImage();
         }
 
-        void MeshDrawing::loadTexture(const char* texturePath) {
-            // Load texture using Nanogui
+        void MeshDrawing::loadImage() {
             int channels;
-            unsigned char* data = stbi_load(texturePath, &textureWidth, &textureHeight, &channels, 3);
-            if (!data) {
-                std::cerr << "Failed to load texture: " << texturePath << std::endl;
+            unsigned char* image_data = stbi_load(imagePath.c_str(), &width, &height, &channels, 1);
+            if (!image_data) {
+                std::cerr << "Error: Failed to load image." << std::endl;
                 return;
             }
 
-            // Generate texture ID
-            glGenTextures(1, &textureID);
-            glBindTexture(GL_TEXTURE_2D, textureID);
 
-            // Set texture parameters
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            // Assuming square image
+            int side_length = std::min(width, height);
 
-            // Upload texture data
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            vertices.resize(VERTEX_SIZE * side_length * side_length);
 
-            // Free texture data
-            stbi_image_free(data);
-        }
+            for (int y = 0; y < side_length; ++y) {
+                for (int x = 0; x < side_length; ++x) {
+                    // Assuming image is grayscale
+                    double grayscale_value = image_data[y * width + x] / 255.0;
+                    double lon = ((double)x) / side_length;
+                    double lat = ((double)y) / side_length;
 
-        void MeshDrawing::generateMeshFromTexture(const char* texturePath) {
-            // Load texture using Nanogui
-            int channels;
-            unsigned char* data = stbi_load(texturePath, &textureWidth, &textureHeight, &channels, 3);
-            if (!data) {
-                std::cerr << "Failed to load texture: " << texturePath << std::endl;
-                return;
-            }
+                    double* vptr = &vertices[VERTEX_SIZE * (y * side_length + x)];
 
-            // Clear previous data
-            vertices.clear();
-            normals.clear();
+                    // Texture coordinates
+                    vptr[TCOORD_OFFSET + 0] = lon;
+                    vptr[TCOORD_OFFSET + 1] = lat;
 
-            // Generate mesh from texture data
-            for (int y = 0; y < textureHeight; ++y) {
-                for (int x = 0; x < textureWidth; ++x) {
-                    // Assuming texture is grayscale, use the red channel value as height
-                    float heightValue = data[(y * textureWidth + x) * 4] / 255.0f; // Normalize to [0, 1]
+                    // Position
+                    vptr[VERTEX_OFFSET + 0] = x - side_length / 2.0;
+                    vptr[VERTEX_OFFSET + 1] = grayscale_value * 10.0;
+                    vptr[VERTEX_OFFSET + 2] = y - side_length / 2.0;
 
-                    // Generate vertex
-                    Vector3D vertex(x, heightValue, y); // Adjust heightValue to your scale
-                    vertices.push_back(vertex);
+                    // Normal (same as position in this case)
+                    vptr[NORMAL_OFFSET + 0] = vptr[VERTEX_OFFSET + 0];
+                    vptr[NORMAL_OFFSET + 1] = vptr[VERTEX_OFFSET + 1];
+                    vptr[NORMAL_OFFSET + 2] = vptr[VERTEX_OFFSET + 2];
+
+                    // Tangent
+                    vptr[TANGEN_OFFSET + 0] = 1.0;
+                    vptr[TANGEN_OFFSET + 1] = 0.0;
+                    vptr[TANGEN_OFFSET + 2] = 0.0;
                 }
             }
 
-            // Generate normals
-            for (int y = 0; y < textureHeight; ++y) {
-                for (int x = 0; x < textureWidth; ++x) {
-                    // Calculate normals using neighboring vertices
-                    Vector3D center = vertices[y * textureWidth + x];
-                    Vector3D left = (x > 0) ? vertices[y * textureWidth + (x - 1)] : center;
-                    Vector3D right = (x < textureWidth - 1) ? vertices[y * textureWidth + (x + 1)] : center;
-                    Vector3D up = (y > 0) ? vertices[(y - 1) * textureWidth + x] : center;
-                    Vector3D down = (y < textureHeight - 1) ? vertices[(y + 1) * textureWidth + x] : center;
+            width = height = side_length;
 
-                    Vector3D normal = cross(right - left, up - down).unit();
-                    normals.push_back(normal);
-                }
-            }
-
-            // Free texture data
-            stbi_image_free(data);
+            generateIndices();
+            buildData();
         }
 
-        void MeshDrawing::draw_mesh(GLShader& shader, const Vector3D& position, double scale) {
+        void MeshDrawing::generateIndices() {
+            indices.clear();
+            for (int y = 0; y < height - 1; ++y) {
+                for (int x = 0; x < width - 1; ++x) {
+                    indices.push_back(y * width + x);
+                    indices.push_back((y + 1) * width + x);
+                    indices.push_back(y * width + x + 1);
+                    indices.push_back((y + 1) * width + x);
+                    indices.push_back((y + 1) * width + x + 1);
+                    indices.push_back(y * width + x + 1);
+                }
+            }
+        }
+
+        void MeshDrawing::buildData() {
+            positions = MatrixXf(4, indices.size() * 3);
+            normals = MatrixXf(4, indices.size() * 3);
+            uvs = MatrixXf(2, indices.size() * 3);
+            tangents = MatrixXf(4, indices.size() * 3);
+
+            for (int i = 0; i < indices.size(); i += 3) {
+                double* vPtr1 = &vertices[VERTEX_SIZE * indices[i]];
+                double* vPtr2 = &vertices[VERTEX_SIZE * indices[i + 1]];
+                double* vPtr3 = &vertices[VERTEX_SIZE * indices[i + 2]];
+
+                Vector3D p1(vPtr1[VERTEX_OFFSET], vPtr1[VERTEX_OFFSET + 1],
+                    vPtr1[VERTEX_OFFSET + 2]);
+                Vector3D p2(vPtr2[VERTEX_OFFSET], vPtr2[VERTEX_OFFSET + 1],
+                    vPtr2[VERTEX_OFFSET + 2]);
+                Vector3D p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1],
+                    vPtr3[VERTEX_OFFSET + 2]);
+
+                Vector3D n1(vPtr1[NORMAL_OFFSET], vPtr1[NORMAL_OFFSET + 1],
+                    vPtr1[NORMAL_OFFSET + 2]);
+                Vector3D n2(vPtr2[NORMAL_OFFSET], vPtr2[NORMAL_OFFSET + 1],
+                    vPtr2[NORMAL_OFFSET + 2]);
+                Vector3D n3(vPtr3[NORMAL_OFFSET], vPtr3[NORMAL_OFFSET + 1],
+                    vPtr3[NORMAL_OFFSET + 2]);
+
+                Vector3D uv1(vPtr1[TCOORD_OFFSET], vPtr1[TCOORD_OFFSET + 1], 0);
+                Vector3D uv2(vPtr2[TCOORD_OFFSET], vPtr2[TCOORD_OFFSET + 1], 0);
+                Vector3D uv3(vPtr3[TCOORD_OFFSET], vPtr3[TCOORD_OFFSET + 1], 0);
+
+                Vector3D t1(vPtr1[TANGEN_OFFSET], vPtr1[TANGEN_OFFSET + 1],
+                    vPtr1[TANGEN_OFFSET + 2]);
+                Vector3D t2(vPtr2[TANGEN_OFFSET], vPtr2[TANGEN_OFFSET + 1],
+                    vPtr2[TANGEN_OFFSET + 2]);
+                Vector3D t3(vPtr3[TANGEN_OFFSET], vPtr3[TANGEN_OFFSET + 1],
+                    vPtr3[TANGEN_OFFSET + 2]);
+
+                positions.col(i) << p1.x, p1.y, p1.z, 1.0;
+                positions.col(i + 1) << p2.x, p2.y, p2.z, 1.0;
+                positions.col(i + 2) << p3.x, p3.y, p3.z, 1.0;
+
+                normals.col(i) << n1.x, n1.y, n1.z, 0.0;
+                normals.col(i + 1) << n2.x, n2.y, n2.z, 0.0;
+                normals.col(i + 2) << n3.x, n3.y, n3.z, 0.0;
+
+                uvs.col(i) << uv1.x, uv1.y;
+                uvs.col(i + 1) << uv2.x, uv2.y;
+                uvs.col(i + 2) << uv3.x, uv3.y;
+
+                tangents.col(i) << t1.x, t1.y, t1.z, 0.0;
+                tangents.col(i + 1) << t2.x, t2.y, t2.z, 0.0;
+                tangents.col(i + 2) << t3.x, t3.y, t3.z, 0.0;
+            }
+        }
+
+
+        void MeshDrawing::drawMesh(GLShader& shader, const Vector3D& position, float scale) {
+            //// Set the model matrix
+            //Matrix4f model;
+            //model << scale, 0, 0, position.x,
+            //    0, scale, 0, position.y,
+            //    0, 0, scale, position.z,
+            //    0, 0, 0, 1;
+
+            //// Set the uniform for the model matrix
+            //shader.setUniform("u_model", model);
+
+            //// Upload vertex attributes to shader
+            //shader.uploadAttrib("in_position", positions);
+            //if (shader.attrib("in_normal", false) != -1) {
+            //    shader.uploadAttrib("in_normal", normals);
+            //}
+            //if (shader.attrib("in_uv", false) != -1) {
+            //    shader.uploadAttrib("in_uv", uvs);
+            //}
+            //if (shader.attrib("in_tangent", false) != -1) {
+            //    shader.uploadAttrib("in_tangent", tangents);
+            //}
+
+            //// Draw the mesh using OpenGL
+            //shader.drawArray(GL_TRIANGLES, 0, indices.size());
             Matrix4f model;
-            model << scale, 0, 0, position.x, 0, scale, 0, position.y, 0, 0, scale, position.z, 0, 0, 0, 1;
+            model << scale, 0, 0, position.x,
+				0, scale, 0, position.y,
+				0, 0, scale, position.z,
+				0, 0, 0, 1;
 
             shader.setUniform("u_model", model);
 
-            glBindTexture(GL_TEXTURE_2D, textureID);
 
-            if (!vertices.empty() && !normals.empty()) {
-                if (shader.attrib("in_position", false) != -1) {
-                    shader.uploadAttrib("in_position", vertices);
-                }
-                if (shader.attrib("in_normal", false) != -1) {
-                    shader.uploadAttrib("in_normal", normals);
-                }
-
-                shader.drawArray(GL_TRIANGLES, 0, vertices.size());
+            shader.uploadAttrib("in_position", positions);
+            if (shader.attrib("in_normal", false) != -1) {
+                shader.uploadAttrib("in_normal", normals);
             }
+            if (shader.attrib("in_uv", false) != -1) {
+                shader.uploadAttrib("in_uv", uvs);
+            }
+            if (shader.attrib("in_tangent", false) != -1) {
+                shader.uploadAttrib("in_tangent", tangents, false);
+            }
+
+            shader.drawArray(GL_TRIANGLES, 0, indices.size());
         }
+
 
     } // namespace Misc
 } // namespace CGL

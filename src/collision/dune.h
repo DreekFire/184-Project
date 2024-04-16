@@ -13,8 +13,8 @@ using namespace CGL;
 
 struct Dune : public CollisionObject {
 public:
-    Dune(const Vector3D& point, const Vector3D& normal, double friction, int width, int height)
-        : point(point), normal(normal.unit()), friction(friction), m_meshDrawing(Misc::MeshDrawing(PATH, width, height)) {} // Initialize MeshDrawing with texture path
+    Dune(const Vector3D& point, const Vector3D& normal, double friction)
+        : point(point), normal(normal.unit()), friction(friction), m_meshDrawing(Misc::MeshDrawing(PATH)) {} // Initialize MeshDrawing with texture path
 
     void render(GLShader& shader);
     void collide(PointMass& pm);

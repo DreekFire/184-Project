@@ -9,6 +9,7 @@ set(CLOTHSIM_VIEWER_SOURCE
     # Collision objects
     collision/sphere.cpp
     collision/plane.cpp
+    collision/dune.cpp
 
     # Application
     main.cpp

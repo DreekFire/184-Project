@@ -10,30 +10,28 @@ using namespace nanogui;
 namespace CGL {
 	namespace Misc {
 
-		class MeshDrawing {
-		public:
-			// Supply the desired texture and dimensions
-			MeshDrawing(const char* Path, int width, int height);
+        class MeshDrawing {
+        public:
+            MeshDrawing(const std::string& imagePath);
 
-			/**
-			 * Draws a mesh with the given position and scale in OpenGL, using the
-			 * current modelview/projection matrices and color/material settings.
-			 */
-			void draw_mesh(GLShader& shader, const Vector3D& position, double scale);
+            void loadImage();
+            void generateIndices();
+            void drawMesh(GLShader& shader, const Vector3D& position, float scale);
+            void buildData();
 
-		private:
-			std::vector<unsigned int> indices;
-			std::vector<Vector3D> vertices;
-			std::vector<Vector3D> normals;
+            std::vector<unsigned int> indices;
+            std::vector<double> vertices;
 
-			int textureWidth;
-			int textureHeight;
+            MatrixXf positions;
+            MatrixXf normals;
+            MatrixXf uvs;
+            MatrixXf tangents;
+            int width, height;
 
-			GLuint textureID; // Texture ID
+        private:
+            std::string imagePath;
+        };
 
-			void loadTexture(const char* texturePath);
-			void generateMeshFromTexture(const char* texturePath);
-		};
 
 	} // namespace Misc
 } // namespace CGL
