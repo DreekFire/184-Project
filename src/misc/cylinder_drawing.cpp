@@ -1,7 +1,7 @@
 #include <cmath>
 #include <nanogui/nanogui.h>
 
-#include "cylinger_drawing.h"
+#include "./cylinder_drawing.h"
 
 #include "CGL/color.h"
 #include "CGL/vector3D.h"
