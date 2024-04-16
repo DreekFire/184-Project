@@ -20,80 +20,63 @@ in vec2 v_uv;
 out vec4 out_color;
 
 float h(vec2 uv) {
-  // returns the R channel value of the texture at the given uv
-  return texture(u_texture_4, uv).r;
+    return texture(u_texture_4, uv).r;
+}
+
+// Pseudo-random number generator based on fragment position
+float random(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+// Function to determine if a sparkle should appear based on random value
+float calculateSparkle(vec2 uv) {
+    float sparkleThreshold = 0.95; // Adjust as needed for sparkle density
+    float randomValue = random(uv);
+    return smoothstep(sparkleThreshold - 0.05, sparkleThreshold, randomValue); // Adjust the range for sparkle appearance
 }
 
 void main() {
-  // Bump Mapping
-  // find the normal given the texture
-  float t_width = u_texture_4_size.x;
-  float t_height = u_texture_4_size.y;
+    // Bump Mapping
+    float t_width = u_texture_4_size.x;
+    float t_height = u_texture_4_size.y;
+    vec3 t = normalize(vec3(v_tangent));
+    vec3 b = cross(normalize(vec3(v_normal)), t);
+    mat3 TBN = mat3(t, b, normalize(vec3(v_normal)));
+    float u = v_uv.x;
+    float v = v_uv.y;
+    float normal_scaling = u_normal_scaling;
+    float height_scaling = u_height_scaling;
+    float dU = (h(vec2(u + normal_scaling / t_width, v)) - h(vec2(u, v))) / (height_scaling * normal_scaling);
+    float dV = (h(vec2(u, v + normal_scaling / t_height)) - h(vec2(u, v))) / (height_scaling * normal_scaling);
+    vec3 local_normal = vec3(-dU, -dV, 1.0);
+    vec3 n_d = normalize(TBN * local_normal);
 
-  // find tangent vector
-  vec3 t = normalize(vec3(v_tangent));
+    // Phong Shading
+    float k_d = 1.0;
+    float k_a = 1.0;
+    vec4 I_a = vec4(0.1, 0.1, 0.1, 0);
+    float k_s = 0.95;
+    float p = 25.0;
+    vec3 l = u_light_pos - vec3(v_position);
+    float r = length(l);
+    l = normalize(l);
+    float cos_theta_nl = dot(n_d, l);
+    cos_theta_nl = max(0, cos_theta_nl);
+    vec3 h = l + normalize(u_cam_pos - vec3(v_position));
+    h = normalize(h);
+    float cos_theta_nh = dot(n_d, h);
+    cos_theta_nh = max(0, cos_theta_nh);
+    vec4 I_r2 = vec4(u_light_intensity, 0) / (r * r);
 
-  // create B vector (cross product of normal and tangent)
-  vec3 b = cross(normalize(vec3(v_normal)), t);
+    // Apply the phong model to the base color
+    vec4 phong_color = (k_a * I_a) + (k_d * I_r2 * u_color * cos_theta_nl) + (k_s * I_r2 * u_color * pow(cos_theta_nh, p));
 
-  // create TBN matrix
-  mat3 TBN = mat3(t, b, normalize(vec3(v_normal)));
+    // Calculate sparkle intensity based on random value
+    float sparkleIntensity = calculateSparkle(v_uv);
 
-  // get current u and v values
-  float u = v_uv.x;
-  float v = v_uv.y;
+    // Add sparkle effect
+    phong_color.rgb += sparkleIntensity * 0.5; // Adjust sparkle intensity and color as needed
 
-  // grab scaling values
-  float normal_scaling = u_normal_scaling;
-  float height_scaling = u_height_scaling;
-
-  // calculate dU and dV
-  float dU = (h(vec2(u + normal_scaling / t_width, v)) - h(vec2(u, v))) / (height_scaling * normal_scaling);
-  float dV = (h(vec2(u, v + normal_scaling / t_height)) - h(vec2(u, v))) / (height_scaling * normal_scaling);
-
-  // local space normal 
-  vec3 local_normal = vec3(-dU, -dV, 1.0);
-
-  // calculate displaced normal
-  vec3 n_d = normalize(TBN * local_normal);
-
-
-  // Phong Shading
-  // arbitrary diffuse coefficient
-  float k_d = 1.0;
-
-  // arbitrary ambient coefficient
-  float k_a = 1.0;
-
-  // arbitrary ambient intensity
-  vec4 I_a = vec4(0.1, 0.1, 0.1, 0);
-
-  // arbitrary specular coefficient
-  float k_s = 0.5;
-
-  // arbitrary p value
-  float p = 25.0;
-
-  // find length and radius 
-  vec3 l = u_light_pos - vec3(v_position);
-  float r = length(l);
-  l = normalize(l);
-
-  // cos_theta_nl
-  float cos_theta_nl = dot(n_d, l);
-  cos_theta_nl = max(0, cos_theta_nl);
-
-  // calculate cos_theta_nh, first find h
-  vec3 h = l + normalize(u_cam_pos - vec3(v_position));
-  h = normalize(h);
-  float cos_theta_nh = dot(n_d, h);
-  cos_theta_nh = max(0, cos_theta_nh);
-  
-  // calculate I/r^2
-  vec4 I_r2 = vec4(u_light_intensity, 0) / (r * r);
-
-  // apply the phong model
-    out_color = (k_a * I_a) + (k_d * I_r2 * u_color * cos_theta_nl) + (k_s * I_r2 * u_color * pow(cos_theta_nh, p));
-
-  out_color.a = 1;
+    out_color = phong_color;
+    out_color.a = 1.0;
 }
