@@ -164,6 +164,10 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
         Sphere *sphere = dynamic_cast<Sphere *>((*collision_objects)[j]);
         sphere->collide(point_masses[i]);
       }
+      else if (dynamic_cast<Dune*>((*collision_objects)[j])) {
+		Dune *dune = dynamic_cast<Dune *>((*collision_objects)[j]);
+		dune->collide(point_masses[i]);
+	  }
       else if (dynamic_cast<Plane *>((*collision_objects)[j])) {
         Plane *plane = dynamic_cast<Plane *>((*collision_objects)[j]);
         plane->collide(point_masses[i]);

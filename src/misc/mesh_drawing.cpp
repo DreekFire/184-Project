@@ -70,7 +70,7 @@ namespace CGL {
 
                     // Position
                     vptr[VERTEX_OFFSET + 0] = x - side_length / 2.0;
-                    vptr[VERTEX_OFFSET + 1] = (grayscale_value * 10.0) - 5.0;
+                    vptr[VERTEX_OFFSET + 1] = (grayscale_value * 15.0);
                     vptr[VERTEX_OFFSET + 2] = y - side_length / 2.0;
 
                     // Normal (same as position in this case)
@@ -84,6 +84,18 @@ namespace CGL {
                     vptr[TANGEN_OFFSET + 2] = 0.0;
                 }
             }
+
+            // offset the z height of all vertices such that the center of the mesh is at the origin
+            // first find the height of the center of the mesh
+            double* center_vertex = &vertices[VERTEX_SIZE * (side_length / 2 * side_length + side_length / 2)];
+            double center_height = center_vertex[VERTEX_OFFSET + 1];
+            for (int y = 0; y < side_length; ++y) {
+                for (int x = 0; x < side_length; ++x) {
+					double* vptr = &vertices[VERTEX_SIZE * (y * side_length + x)];
+					vptr[VERTEX_OFFSET + 1] -= center_height;
+				}
+			}
+            
 
             width = height = side_length;
 
@@ -120,9 +132,11 @@ namespace CGL {
                 Vector3D p2(vPtr2[VERTEX_OFFSET], vPtr2[VERTEX_OFFSET + 1], vPtr2[VERTEX_OFFSET + 2]);
                 Vector3D p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1], vPtr3[VERTEX_OFFSET + 2]);
 
-                Vector3D n1(vPtr1[NORMAL_OFFSET], vPtr1[NORMAL_OFFSET + 1], vPtr1[NORMAL_OFFSET + 2]);
-                Vector3D n2(vPtr2[NORMAL_OFFSET], vPtr2[NORMAL_OFFSET + 1], vPtr2[NORMAL_OFFSET + 2]);
-                Vector3D n3(vPtr3[NORMAL_OFFSET], vPtr3[NORMAL_OFFSET + 1], vPtr3[NORMAL_OFFSET + 2]);
+                // normals should be the normmal per vertex and not purely the position in space, calculate the normal of the triangle
+                // normal at the vertex is the average of the normals of the triangles that share the vertex
+                Vector3D n1 = cross(p2 - p1, p3 - p1).unit();
+                Vector3D n2 = n1;
+                Vector3D n3 = n1;
 
                 Vector3D uv1(vPtr1[TCOORD_OFFSET], vPtr1[TCOORD_OFFSET + 1], 0);
                 Vector3D uv2(vPtr2[TCOORD_OFFSET], vPtr2[TCOORD_OFFSET + 1], 0);
@@ -154,7 +168,62 @@ namespace CGL {
             }
         }
 
+        // function to detect collisions and ensure that object remains on the surface
+        void MeshDrawing::collide(PointMass& pm) {
+            // pm has a position and a last_position
+            // use the last position to detect collisions
+			// find the closest point on the mesh to the point mass
+            // it should be the triangle underneath the point mass
+            // no looping since that would be too slow
+            Vector3D closest_point;
+            double closest_distance = std::numeric_limits<double>::infinity();
+            // loop through each vertex of the mesh and find the closest one
+            for (size_t i = 0; i < indices.size(); i += 3) {
+				double* vPtr1 = &vertices[VERTEX_SIZE * indices[i]];
+				double* vPtr2 = &vertices[VERTEX_SIZE * indices[i + 1]];
+				double* vPtr3 = &vertices[VERTEX_SIZE * indices[i + 2]];
 
+				Vector3D p1(vPtr1[VERTEX_OFFSET], vPtr1[VERTEX_OFFSET + 1], vPtr1[VERTEX_OFFSET + 2]);
+				Vector3D p2(vPtr2[VERTEX_OFFSET], vPtr2[VERTEX_OFFSET + 1], vPtr2[VERTEX_OFFSET + 2]);
+				Vector3D p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1], vPtr3[VERTEX_OFFSET + 2]);
+
+				// find the closest point on the triangle to the point mass
+				Vector3D closest = p1;
+				Vector3D edge1 = p2 - p1;
+				Vector3D edge2 = p3 - p1;
+				Vector3D edge3 = p3 - p2;
+				Vector3D normal = cross(edge1, edge2).unit();
+				Vector3D to_pm = pm.last_position - p1;
+				double d = dot(to_pm, normal);
+				Vector3D projected = pm.last_position - d * normal;
+				// check if the projected point is inside the triangle
+				Vector3D c0 = cross(edge1, projected - p1);
+				Vector3D c1 = cross(edge2, projected - p2);
+				Vector3D c2 = cross(edge3, projected - p3);
+                if (dot(c0, normal) >= 0 && dot(c1, normal) >= 0 && dot(c2, normal) >= 0) {
+					// the projected point is inside the triangle
+					double distance = (pm.last_position - projected).norm();
+                    if (distance < closest_distance) {
+						closest_distance = distance;
+						closest_point = projected;
+					}
+				}
+                else {
+					// the projected point is outside the triangle
+					// find the closest point on the edges of the triangle
+					Vector3D closest_edge_point;
+					double closest_edge_distance = std::numeric_limits<double>::infinity();
+					Vector3D edge_points[3] = { p1, p2, p3 };
+                }
+            }
+            
+            // if the point mass is below the mesh, move it to the closest point on the mesh
+            if (pm.last_position.y < closest_point.y) {
+                pm.position = pm.last_position;
+                // add adjustment factor to keep the point mass on the surface
+                pm.position.y = closest_point.y + 0.0001;
+            }
+        }
 
         void MeshDrawing::drawMesh(GLShader& shader, const Vector3D& position, float scale) {
             Matrix4f model;

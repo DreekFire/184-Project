@@ -12,12 +12,7 @@ using namespace CGL;
 #define SURFACE_OFFSET 0.0001
 
 void Dune::collide(PointMass& pm) {
-    float tangent_point = dot(pm.position - point, normal);
-    if (tangent_point <= 0) {
-        Vector3D correction_vector = -(tangent_point + SURFACE_OFFSET) * normal - pm.last_position + pm.position;
-        correction_vector = correction_vector * (1 - friction);
-        pm.position = pm.last_position - correction_vector;
-    }
+    m_meshDrawing.collide(pm); // Call the collide function of MeshDrawing
 }
 
 void Dune::render(GLShader& shader) {

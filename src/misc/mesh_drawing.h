@@ -4,6 +4,7 @@
 #include <vector>
 #include <nanogui/nanogui.h>
 #include "CGL/CGL.h"
+#include "../clothMesh.h"
 
 using namespace nanogui;
 
@@ -18,6 +19,7 @@ namespace CGL {
             void generateIndices();
             void drawMesh(GLShader& shader, const Vector3D& position, float scale);
             void buildData();
+            void collide(PointMass& pm);
 
             std::vector<unsigned int> indices;
             std::vector<double> vertices;
