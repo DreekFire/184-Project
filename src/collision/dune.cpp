@@ -1,14 +1,19 @@
 #include "iostream"
 #include <nanogui/nanogui.h>
 
+
+#include "misc/file_utils.h"
+
 #include "../clothMesh.h"
 #include "../clothSimulator.h"
 #include "dune.h"
+#include "../misc/mesh_drawing.h" // Include the MeshDrawing header
 
 using namespace std;
 using namespace CGL;
 
 #define SURFACE_OFFSET 0.0001
+#define PATH "../../textures/dune.jpg"
 
 void Dune::collide(PointMass& pm) {
     float tangent_point = dot(pm.position - point, normal);
@@ -21,5 +26,5 @@ void Dune::collide(PointMass& pm) {
 
 void Dune::render(GLShader& shader) {
     // Render the dune mesh using MeshDrawing
-    meshDrawing.draw_mesh(shader, point, 1.0); // Adjust scale as needed
+    m_meshDrawing.draw_mesh(shader, point, 1.0); // Adjust scale as needed
 }

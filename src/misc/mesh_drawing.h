@@ -13,7 +13,7 @@ namespace CGL {
 		class MeshDrawing {
 		public:
 			// Supply the desired texture and dimensions
-			MeshDrawing(const char* texturePath, int width, int height);
+			MeshDrawing(const char* Path, int width, int height);
 
 			/**
 			 * Draws a mesh with the given position and scale in OpenGL, using the
@@ -25,7 +25,6 @@ namespace CGL {
 			std::vector<unsigned int> indices;
 			std::vector<Vector3D> vertices;
 			std::vector<Vector3D> normals;
-			std::vector<Vector2D> texCoords;
 
 			int textureWidth;
 			int textureHeight;
@@ -33,7 +32,7 @@ namespace CGL {
 			GLuint textureID; // Texture ID
 
 			void loadTexture(const char* texturePath);
-			void generateMeshFromTexture(int width, int height);
+			void generateMeshFromTexture(const char* texturePath);
 		};
 
 	} // namespace Misc

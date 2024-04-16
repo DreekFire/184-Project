@@ -9,10 +9,12 @@
 using namespace nanogui;
 using namespace CGL;
 
+#define PATH "../../textures/dune.jpg"
+
 struct Dune : public CollisionObject {
 public:
-    Dune(const Vector3D& point, const Vector3D& normal, double friction, const char* texturePath)
-        : point(point), normal(normal.unit()), friction(friction), meshDrawing(texturePath, 0, 0) {} // Initialize MeshDrawing with texture path
+    Dune(const Vector3D& point, const Vector3D& normal, double friction, int width, int height)
+        : point(point), normal(normal.unit()), friction(friction), m_meshDrawing(Misc::MeshDrawing(PATH, width, height)) {} // Initialize MeshDrawing with texture path
 
     void render(GLShader& shader);
     void collide(PointMass& pm);
@@ -22,7 +24,7 @@ public:
     double friction;
 
     // MeshDrawing object for rendering the dune mesh
-    Misc::MeshDrawing meshDrawing;
+    Misc::MeshDrawing m_meshDrawing;
 };
 
 #endif /* COLLISIONOBJECT_DUNE_H */

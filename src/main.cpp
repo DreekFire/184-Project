@@ -33,8 +33,9 @@ using json = nlohmann::json;
 const string SPHERE = "sphere";
 const string PLANE = "plane";
 const string CLOTH = "cloth";
+const string DUNE = "dune";
 
-const unordered_set<string> VALID_KEYS = {SPHERE, PLANE, CLOTH};
+const unordered_set<string> VALID_KEYS = {SPHERE, PLANE, DUNE, CLOTH};
 
 ClothSimulator *app = nullptr;
 GLFWwindow *window = nullptr;
@@ -300,34 +301,88 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
       cp->density = density;
       cp->damping = damping;
       cp->ks = ks;
-    } else if (key == SPHERE) {
-      Vector3D origin;
-      double radius, friction;
+    }
+    else if (key == SPHERE) {
+        Vector3D origin;
+        double radius, friction;
 
-      auto it_origin = object.find("origin");
-      if (it_origin != object.end()) {
-        vector<double> vec_origin = *it_origin;
-        origin = Vector3D(vec_origin[0], vec_origin[1], vec_origin[2]);
-      } else {
-        incompleteObjectError("sphere", "origin");
-      }
+        auto it_origin = object.find("origin");
+        if (it_origin != object.end()) {
+            vector<double> vec_origin = *it_origin;
+            origin = Vector3D(vec_origin[0], vec_origin[1], vec_origin[2]);
+        }
+        else {
+            incompleteObjectError("sphere", "origin");
+        }
 
-      auto it_radius = object.find("radius");
-      if (it_radius != object.end()) {
-        radius = *it_radius;
-      } else {
-        incompleteObjectError("sphere", "radius");
-      }
+        auto it_radius = object.find("radius");
+        if (it_radius != object.end()) {
+            radius = *it_radius;
+        }
+        else {
+            incompleteObjectError("sphere", "radius");
+        }
 
-      auto it_friction = object.find("friction");
-      if (it_friction != object.end()) {
-        friction = *it_friction;
-      } else {
-        incompleteObjectError("sphere", "friction");
-      }
+        auto it_friction = object.find("friction");
+        if (it_friction != object.end()) {
+            friction = *it_friction;
+        }
+        else {
+            incompleteObjectError("sphere", "friction");
+        }
 
-      Sphere *s = new Sphere(origin, radius, friction, sphere_num_lat, sphere_num_lon);
-      objects->push_back(s);
+        Sphere* s = new Sphere(origin, radius, friction, sphere_num_lat, sphere_num_lon);
+        objects->push_back(s);
+    } else if (key == DUNE) { // HANDLE A DUNE
+        Vector3D point, normal;
+        double friction;
+        string texturePath;
+        int height, width;
+
+        auto it_point = object.find("point");
+        if (it_point != object.end()) {
+            vector<double> vec_point = *it_point;
+            point = Vector3D(vec_point[0], vec_point[1], vec_point[2]);
+        }
+        else {
+            incompleteObjectError("dune", "point");
+        }
+
+        auto it_normal = object.find("normal");
+        if (it_normal != object.end()) {
+            vector<double> vec_normal = *it_normal;
+            normal = Vector3D(vec_normal[0], vec_normal[1], vec_normal[2]);
+        }
+        else {
+            incompleteObjectError("dune", "normal");
+        }
+
+        auto it_friction = object.find("friction");
+        if (it_friction != object.end()) {
+            friction = *it_friction;
+        }
+        else {
+            incompleteObjectError("dune", "friction");
+        }
+
+        auto it_height = object.find("height");
+        if (it_height != object.end()) {
+			height = *it_height;
+		}
+        else {
+			incompleteObjectError("dune", "height");
+		}
+
+        auto it_width = object.find("width");
+        if (it_width != object.end()) {
+            width = *it_width;
+        }
+        else {
+			incompleteObjectError("dune", "width");
+		}
+
+        Dune* d = new Dune(point, normal, friction, height, width);
+        objects->push_back(d);
     } else { // PLANE
       Vector3D point, normal;
       double friction;

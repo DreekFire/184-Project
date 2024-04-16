@@ -17,6 +17,7 @@ set(CLOTHSIM_VIEWER_SOURCE
     # Miscellaneous
     # png.cpp
     misc/sphere_drawing.cpp
+    misc/mesh_drawing.cpp
     misc/file_utils.cpp
 
     # Camera

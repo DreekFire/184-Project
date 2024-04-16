@@ -1,10 +1,15 @@
 #include <cmath>
 #include <nanogui/nanogui.h>
 
+#include "file_utils.h"
+#include "stb_image.h"
+
 #include "mesh_drawing.h"
 
 #include "CGL/color.h"
 #include "CGL/vector3D.h"
+
+#include <iostream>
 
 #define TCOORD_OFFSET 0
 #define NORMAL_OFFSET 2
@@ -13,6 +18,7 @@
 #define VERTEX_SIZE 11
 
 using namespace nanogui;
+using namespace std;
 
 namespace CGL {
     namespace Misc {
@@ -27,7 +33,7 @@ namespace CGL {
         void MeshDrawing::loadTexture(const char* texturePath) {
             // Load texture using Nanogui
             int channels;
-            unsigned char* data = stbi_load(texturePath, &textureWidth, &textureHeight, &channels, STBI_rgb_alpha);
+            unsigned char* data = stbi_load(texturePath, &textureWidth, &textureHeight, &channels, 3);
             if (!data) {
                 std::cerr << "Failed to load texture: " << texturePath << std::endl;
                 return;
@@ -44,7 +50,7 @@ namespace CGL {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             // Upload texture data
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureWidth, textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
             // Free texture data
             stbi_image_free(data);
@@ -53,7 +59,7 @@ namespace CGL {
         void MeshDrawing::generateMeshFromTexture(const char* texturePath) {
             // Load texture using Nanogui
             int channels;
-            unsigned char* data = stbi_load(texturePath, &textureWidth, &textureHeight, &channels, STBI_rgb_alpha);
+            unsigned char* data = stbi_load(texturePath, &textureWidth, &textureHeight, &channels, 3);
             if (!data) {
                 std::cerr << "Failed to load texture: " << texturePath << std::endl;
                 return;
@@ -62,7 +68,6 @@ namespace CGL {
             // Clear previous data
             vertices.clear();
             normals.clear();
-            texCoords.clear();
 
             // Generate mesh from texture data
             for (int y = 0; y < textureHeight; ++y) {
@@ -73,10 +78,6 @@ namespace CGL {
                     // Generate vertex
                     Vector3D vertex(x, heightValue, y); // Adjust heightValue to your scale
                     vertices.push_back(vertex);
-
-                    // Generate texture coordinate
-                    Vector2D texCoord((float)x / (float)(textureWidth - 1), (float)y / (float)(textureHeight - 1)); // Texture coordinate
-                    texCoords.push_back(texCoord);
                 }
             }
 
@@ -107,15 +108,12 @@ namespace CGL {
 
             glBindTexture(GL_TEXTURE_2D, textureID);
 
-            if (!vertices.empty() && !normals.empty() && !texCoords.empty()) {
+            if (!vertices.empty() && !normals.empty()) {
                 if (shader.attrib("in_position", false) != -1) {
                     shader.uploadAttrib("in_position", vertices);
                 }
                 if (shader.attrib("in_normal", false) != -1) {
                     shader.uploadAttrib("in_normal", normals);
-                }
-                if (shader.attrib("in_texcoord", false) != -1) {
-                    shader.uploadAttrib("in_texcoord", texCoords);
                 }
 
                 shader.drawArray(GL_TRIANGLES, 0, vertices.size());
