@@ -176,52 +176,37 @@ namespace CGL {
             // it should be the triangle underneath the point mass
             // no looping since that would be too slow
             Vector3D closest_point;
-            double closest_distance = std::numeric_limits<double>::infinity();
-            // loop through each vertex of the mesh and find the closest one
-            for (size_t i = 0; i < indices.size(); i += 3) {
-				double* vPtr1 = &vertices[VERTEX_SIZE * indices[i]];
-				double* vPtr2 = &vertices[VERTEX_SIZE * indices[i + 1]];
-				double* vPtr3 = &vertices[VERTEX_SIZE * indices[i + 2]];
+            // find the relative location of the point mass in the mesh in terms of side length
+            double x = pm.last_position.x + width / 2.0;
+            double y = pm.last_position.z + height / 2.0;
+            // find the triangle that the point mass is in
+            int x1 = std::floor(x);
+            int y1 = std::floor(y);
+            // find the relative position of the point mass in the triangle
+            double x2 = x - x1;
+            double y2 = y - y1;
+            // find the triangle that the point mass is in
+            double* vPtr1 = &vertices[VERTEX_SIZE * (y1 * width + x1)];
+            double* vPtr2 = &vertices[VERTEX_SIZE * ((y1 + 1) * width + x1)];
+            double* vPtr3 = &vertices[VERTEX_SIZE * (y1 * width + x1 + 1)];
 
-				Vector3D p1(vPtr1[VERTEX_OFFSET], vPtr1[VERTEX_OFFSET + 1], vPtr1[VERTEX_OFFSET + 2]);
-				Vector3D p2(vPtr2[VERTEX_OFFSET], vPtr2[VERTEX_OFFSET + 1], vPtr2[VERTEX_OFFSET + 2]);
-				Vector3D p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1], vPtr3[VERTEX_OFFSET + 2]);
+            Vector3D p1(vPtr1[VERTEX_OFFSET], vPtr1[VERTEX_OFFSET + 1], vPtr1[VERTEX_OFFSET + 2]);
+            Vector3D p2(vPtr2[VERTEX_OFFSET], vPtr2[VERTEX_OFFSET + 1], vPtr2[VERTEX_OFFSET + 2]);
+            Vector3D p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1], vPtr3[VERTEX_OFFSET + 2]);
 
-				// find the closest point on the triangle to the point mass
-				Vector3D closest = p1;
-				Vector3D edge1 = p2 - p1;
-				Vector3D edge2 = p3 - p1;
-				Vector3D edge3 = p3 - p2;
-				Vector3D normal = cross(edge1, edge2).unit();
-				Vector3D to_pm = pm.last_position - p1;
-				double d = dot(to_pm, normal);
-				Vector3D projected = pm.last_position - d * normal;
-				// check if the projected point is inside the triangle
-				Vector3D c0 = cross(edge1, projected - p1);
-				Vector3D c1 = cross(edge2, projected - p2);
-				Vector3D c2 = cross(edge3, projected - p3);
-                if (dot(c0, normal) >= 0 && dot(c1, normal) >= 0 && dot(c2, normal) >= 0) {
-					// the projected point is inside the triangle
-					double distance = (pm.last_position - projected).norm();
-                    if (distance < closest_distance) {
-						closest_distance = distance;
-						closest_point = projected;
-					}
-				}
-                else {
-					// the projected point is outside the triangle
-					// find the closest point on the edges of the triangle
-					Vector3D closest_edge_point;
-					double closest_edge_distance = std::numeric_limits<double>::infinity();
-					Vector3D edge_points[3] = { p1, p2, p3 };
-                }
-            }
-            
+            // find the closest point on the triangle to the point mass
+            if (x2 + y2 < 1) {
+				closest_point = p1 + x2 * (p3 - p1) + y2 * (p2 - p1);
+			}
+            else {
+				closest_point = p3 + (1 - x2) * (p2 - p3) + (1 - y2) * (p1 - p3);
+			}
             // if the point mass is below the mesh, move it to the closest point on the mesh
-            if (pm.last_position.y < closest_point.y) {
-                pm.position = pm.last_position;
+            if (pm.position.y <= closest_point.y + 0.001) {
+                pm.last_position = pm.position;
                 // add adjustment factor to keep the point mass on the surface
-                pm.position.y = closest_point.y + 0.0001;
+                pm.position.y = closest_point.y + 0.001;
+                
             }
         }
 
