@@ -145,15 +145,27 @@ namespace CGL {
                 for (int j = 0; j < 3; ++j) {
                     int vertexIndex = indices[i + j];
                     vertexNormals[vertexIndex] += faceNormal;
-                    // Compute tangent if needed
-                    // vertexTangents[vertexIndex] += computeTangent(/* input parameters */);
+                    // Compute tangent
+                    Vector3D edge1 = p2 - p1;
+                    Vector3D edge2 = p3 - p1;
+                    Vector3D deltaUV1(vertices[VERTEX_SIZE * indices[i + 1] + TCOORD_OFFSET] - vertices[VERTEX_SIZE * indices[i] + TCOORD_OFFSET],
+                        						vertices[VERTEX_SIZE * indices[i + 1] + TCOORD_OFFSET + 1] - vertices[VERTEX_SIZE * indices[i] + TCOORD_OFFSET + 1], 0);
+                    Vector3D deltaUV2(vertices[VERTEX_SIZE * indices[i + 2] + TCOORD_OFFSET] - vertices[VERTEX_SIZE * indices[i] + TCOORD_OFFSET],
+                        						vertices[VERTEX_SIZE * indices[i + 2] + TCOORD_OFFSET + 1] - vertices[VERTEX_SIZE * indices[i] + TCOORD_OFFSET + 1], 0);
+                    float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+                    Vector3D tangent(f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x),
+                        												f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y),
+                        												f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z));
+                    vertexTangents[vertexIndex] += tangent;
                 }
             }
 
             // Normalize normals and tangents
             for (size_t i = 0; i < vertexNormals.size(); ++i)
                 vertexNormals[i].normalize();
-            // Similarly, normalize tangents if computed
+            // Similarly, normalize tangents
+            for (size_t i = 0; i < vertexTangents.size(); ++i)
+				vertexTangents[i].normalize();
 
             // Populate matrices
             for (size_t i = 0; i < indices.size(); i += 3) {
