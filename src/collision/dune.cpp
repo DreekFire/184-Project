@@ -10,7 +10,6 @@ using namespace std;
 using namespace CGL;
 
 #define SURFACE_OFFSET 0.0001
-#define PATH "../../textures/dune.jpg"
 
 void Dune::collide(PointMass& pm) {
     float tangent_point = dot(pm.position - point, normal);

@@ -158,7 +158,7 @@ void incompleteObjectError(const char *object, const char *attribute) {
   exit(-1);
 }
 
-bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vector<CollisionObject *>* objects, int sphere_num_lat, int sphere_num_lon) {
+bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vector<CollisionObject *>* objects, int sphere_num_lat, int sphere_num_lon, string project_root) {
   // Read JSON from file
   ifstream i(filename);
   if (!i.good()) {
@@ -364,7 +364,7 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
             incompleteObjectError("dune", "friction");
         }
 
-        Dune* d = new Dune(point, normal, friction);
+        Dune* d = new Dune(point, normal, friction, project_root);
         objects->push_back(d);
     } else { // PLANE
       Vector3D point, normal;
@@ -499,7 +499,7 @@ int main(int argc, char **argv) {
     file_to_load_from = def_fname.str();
   }
   
-  bool success = loadObjectsFromFile(file_to_load_from, &cloth, &cp, &objects, sphere_num_lat, sphere_num_lon);
+  bool success = loadObjectsFromFile(file_to_load_from, &cloth, &cp, &objects, sphere_num_lat, sphere_num_lon, project_root);
   if (!success) {
     std::cout << "Warn: Unable to load from file: " << file_to_load_from << std::endl;
   }

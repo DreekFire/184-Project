@@ -10,6 +10,7 @@
 #include "CGL/vector3D.h"
 
 #include <iostream>
+#include <filesystem>
 
 #define TCOORD_OFFSET 0
 #define NORMAL_OFFSET 2
@@ -23,17 +24,27 @@ using namespace std;
 namespace CGL {
     namespace Misc {
 
-        MeshDrawing::MeshDrawing(const std::string& imagePath)
-            : imagePath(imagePath) {
+        MeshDrawing::MeshDrawing(const std::string& imagePath, const std::string& project_root)
+            : imagePath(imagePath), projectRoot(project_root){
             loadImage();
         }
 
         void MeshDrawing::loadImage() {
             int channels;
-            unsigned char* image_data = stbi_load(imagePath.c_str(), &width, &height, &channels, 1);
+            //. print the current path
+            std::string exePath = projectRoot;
+            std::string fullPath = exePath + imagePath;
+            // print the path
+            std::cout << "Path is: " << fullPath << std::endl;
+            unsigned char* image_data = stbi_load(fullPath.c_str(), &width, &height, &channels, 1);
             if (!image_data) {
                 std::cerr << "Error: Failed to load image." << std::endl;
-                return;
+                // just use a flat black texture as a fallback
+                width = height = 512;
+                image_data = new unsigned char[width * height];
+                for (int i = 0; i < width * height; ++i) {
+					image_data[i] = 0;
+				}
             }
 
 
@@ -57,7 +68,7 @@ namespace CGL {
 
                     // Position
                     vptr[VERTEX_OFFSET + 0] = x - side_length / 2.0;
-                    vptr[VERTEX_OFFSET + 1] = grayscale_value * 10.0;
+                    vptr[VERTEX_OFFSET + 1] = grayscale_value * 5.0 / 255.0;
                     vptr[VERTEX_OFFSET + 2] = y - side_length / 2.0;
 
                     // Normal (same as position in this case)
@@ -148,30 +159,6 @@ namespace CGL {
 
 
         void MeshDrawing::drawMesh(GLShader& shader, const Vector3D& position, float scale) {
-            //// Set the model matrix
-            //Matrix4f model;
-            //model << scale, 0, 0, position.x,
-            //    0, scale, 0, position.y,
-            //    0, 0, scale, position.z,
-            //    0, 0, 0, 1;
-
-            //// Set the uniform for the model matrix
-            //shader.setUniform("u_model", model);
-
-            //// Upload vertex attributes to shader
-            //shader.uploadAttrib("in_position", positions);
-            //if (shader.attrib("in_normal", false) != -1) {
-            //    shader.uploadAttrib("in_normal", normals);
-            //}
-            //if (shader.attrib("in_uv", false) != -1) {
-            //    shader.uploadAttrib("in_uv", uvs);
-            //}
-            //if (shader.attrib("in_tangent", false) != -1) {
-            //    shader.uploadAttrib("in_tangent", tangents);
-            //}
-
-            //// Draw the mesh using OpenGL
-            //shader.drawArray(GL_TRIANGLES, 0, indices.size());
             Matrix4f model;
             model << scale, 0, 0, position.x,
 				0, scale, 0, position.y,

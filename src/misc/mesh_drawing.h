@@ -12,7 +12,7 @@ namespace CGL {
 
         class MeshDrawing {
         public:
-            MeshDrawing(const std::string& imagePath);
+            MeshDrawing(const std::string& imagePath, const std::string& project_root);
 
             void loadImage();
             void generateIndices();
@@ -30,6 +30,7 @@ namespace CGL {
 
         private:
             std::string imagePath;
+            std::string projectRoot;
         };
 
 
