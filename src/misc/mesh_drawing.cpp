@@ -57,6 +57,8 @@ namespace CGL {
                 for (int x = 0; x < side_length; ++x) {
                     // Assuming image is grayscale
                     double grayscale_value = image_data[y * width + x] / 255.0;
+                    // invert such that the dark areas are subtracted from the height
+                    grayscale_value = 1.0 - grayscale_value;
                     double lon = ((double)x) / side_length;
                     double lat = ((double)y) / side_length;
 
@@ -68,7 +70,7 @@ namespace CGL {
 
                     // Position
                     vptr[VERTEX_OFFSET + 0] = x - side_length / 2.0;
-                    vptr[VERTEX_OFFSET + 1] = grayscale_value * 5.0 / 255.0;
+                    vptr[VERTEX_OFFSET + 1] = (grayscale_value * 5.0) - 5.0;
                     vptr[VERTEX_OFFSET + 2] = y - side_length / 2.0;
 
                     // Normal (same as position in this case)
