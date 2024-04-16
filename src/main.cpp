@@ -15,6 +15,7 @@
 #include "CGL/CGL.h"
 #include "collision/plane.h"
 #include "collision/sphere.h"
+#include "collision/cylinder.h"
 #include "cloth.h"
 #include "clothSimulator.h"
 #include "json.hpp"
@@ -30,10 +31,11 @@ using json = nlohmann::json;
 #define msg(s) cerr << "[ClothSim] " << s << endl;
 
 const string SPHERE = "sphere";
+const string CYLINDER = "cylinder";
 const string PLANE = "plane";
 const string CLOTH = "cloth";
 
-const unordered_set<string> VALID_KEYS = {SPHERE, PLANE, CLOTH};
+const unordered_set<string> VALID_KEYS = {SPHERE, PLANE, CLOTH, CYLINDER};
 
 ClothSimulator *app = nullptr;
 GLFWwindow *window = nullptr;
@@ -156,7 +158,7 @@ void incompleteObjectError(const char *object, const char *attribute) {
   exit(-1);
 }
 
-bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vector<CollisionObject *>* objects, int sphere_num_lat, int sphere_num_lon) {
+bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vector<CollisionObject *>* objects, int sphere_num_lat, int sphere_num_lon, int cylinder_num_lat, int cylinder_num_lon) {
   // Read JSON from file
   ifstream i(filename);
   if (!i.good()) {
@@ -327,7 +329,51 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
 
       Sphere *s = new Sphere(origin, radius, friction, sphere_num_lat, sphere_num_lon);
       objects->push_back(s);
-    } else { // PLANE
+    } else if (key == CYLINDER) {
+      Vector3D center, axis;
+      double radius, height, friction;
+
+      auto it_center = object.find("center");
+      if (it_center != object.end()) {
+        vector<double> vec_center = *it_center;
+        center = Vector3D(vec_center[0], vec_center[1], vec_center[2]);
+      } else {
+        incompleteObjectError("cylinder", "center");
+      }
+
+      auto it_axis = object.find("axis");
+      if (it_axis != object.end()) {
+        vector<double> vec_axis = *it_axis;
+        axis = Vector3D(vec_axis[0], vec_axis[1], vec_axis[2]);
+      } else {
+        incompleteObjectError("cylinder", "axis");
+      }
+
+      auto it_radius = object.find("radius");
+      if (it_radius != object.end()) {
+        radius = *it_radius;
+      } else {
+        incompleteObjectError("cylinder", "radius");
+      }
+
+      auto it_height = object.find("height");
+      if (it_height != object.end()) {
+        height = *it_height;
+      } else {
+        incompleteObjectError("cylinder", "height");
+      }
+
+      auto it_friction = object.find("friction");
+      if (it_friction != object.end()) {
+        friction = *it_friction;
+      } else {
+        incompleteObjectError("cylinder", "friction");
+      }
+
+      Cylinder *c = new Cylinder(center, axis, radius, height, friction, cylinder_num_lat, cylinder_num_lon);
+      objects->push_back(c);
+    }
+    else { // PLANE
       Vector3D point, normal;
       double friction;
 
@@ -404,6 +450,9 @@ int main(int argc, char **argv) {
   
   int sphere_num_lat = 40;
   int sphere_num_lon = 40;
+
+  int cylinder_num_lat = 40;
+  int cylinder_num_lon = 40;
   
   std::string file_to_load_from;
   bool file_specified = false;
@@ -429,6 +478,7 @@ int main(int argc, char **argv) {
           arg_int = 1;
         }
         sphere_num_lat = arg_int;
+        cylinder_num_lat = arg_int;
         break;
       }
       case 'o': {
@@ -437,6 +487,7 @@ int main(int argc, char **argv) {
           arg_int = 1;
         }
         sphere_num_lon = arg_int;
+        cylinder_num_lon = arg_int;
         break;
       }
       default: {
@@ -460,7 +511,7 @@ int main(int argc, char **argv) {
     file_to_load_from = def_fname.str();
   }
   
-  bool success = loadObjectsFromFile(file_to_load_from, &cloth, &cp, &objects, sphere_num_lat, sphere_num_lon);
+  bool success = loadObjectsFromFile(file_to_load_from, &cloth, &cp, &objects, sphere_num_lat, sphere_num_lon, cylinder_num_lat, cylinder_num_lon);
   if (!success) {
     std::cout << "Warn: Unable to load from file: " << file_to_load_from << std::endl;
   }

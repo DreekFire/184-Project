@@ -10,6 +10,7 @@
 #include "cloth.h"
 #include "collision/plane.h"
 #include "collision/sphere.h"
+#include "collision/cylinder.h"
 #include "misc/camera_info.h"
 #include "misc/file_utils.h"
 // Needed to generate stb_image binaries. Should only define in exactly one source file importing stb_image.h.
