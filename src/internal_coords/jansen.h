@@ -6,7 +6,7 @@
 
 class Jansen {
 public:
-    static std::vector<std::vector<CGL::Vector2D>> resolve(std::vector<float> q);
+    static std::pair<std::vector<CGL::Vector2D>, std::vector<std::vector<CGL::Vector2D>>> resolve(std::vector<float> q);
 
 private:
     const static std::vector<CGL::Vector2D> fixedPos;

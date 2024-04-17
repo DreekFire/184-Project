@@ -6,6 +6,11 @@ set(CLOTHSIM_VIEWER_SOURCE
     cloth.cpp
     clothMesh.cpp
 
+    internal_coords/jansen.cpp
+    internal_coords/parabolaBead.cpp
+
+    linkageUtils.cpp
+
     # Collision objects
     collision/sphere.cpp
     collision/plane.cpp

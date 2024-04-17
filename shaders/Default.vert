@@ -41,4 +41,5 @@ void main() {
   // The final screen-space location of this vertex which the
   // GPU's triangle rasterizer takes in.
   gl_Position = u_view_projection * u_model * in_position;
+  gl_PointSize = 20.0f;
 }

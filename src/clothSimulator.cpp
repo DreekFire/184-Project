@@ -162,6 +162,7 @@ ClothSimulator::ClothSimulator(std::string project_root, Screen *screen)
   this->load_textures();
 
   glEnable(GL_PROGRAM_POINT_SIZE);
+  glLineWidth(10.0f);
   glEnable(GL_DEPTH_TEST);
 }
 
@@ -272,7 +273,8 @@ void ClothSimulator::drawContents() {
   switch (active_shader.type_hint) {
   case WIREFRAME:
     shader.setUniform("u_color", color, false);
-    drawWireframe(shader);
+    // drawWireframe(shader);
+    drawBeestWireframe(shader);
     break;
   case NORMALS:
     drawNormals(shader);
@@ -354,6 +356,49 @@ void ClothSimulator::drawWireframe(GLShader &shader) {
 
   //shader.setUniform("u_color", nanogui::Color(1.0f, 1.0f, 1.0f, 1.0f), false);
   shader.uploadAttrib("in_position", positions, false);
+  // Commented out: the wireframe shader does not have this attribute
+  //shader.uploadAttrib("in_normal", normals);
+
+  shader.drawArray(GL_LINES, 0, num_springs * 2);
+}
+
+int printed = 0;
+
+void ClothSimulator::drawBeestWireframe(GLShader &shader) {
+
+  int num_points = cloth->beest.pms.size();
+
+  MatrixXf positions(4, num_points);
+
+  for (int i = 0; i < cloth->beest.pms.size(); i++) {
+    CGL::Vector3D p = cloth->beest.pms[i].position;
+    positions.col(i) << p.x, p.y, p.z, 1.0;
+  }
+  shader.uploadAttrib("in_position", positions, false);
+  shader.drawArray(GL_POINTS, 0, num_points);
+  //return;
+  int num_springs = cloth->beest.ss.size();
+
+  MatrixXf spring_positions(4, num_springs * 2);
+
+  // Draw springs as lines
+
+  int si = 0;
+
+  for (Spring& s : cloth->beest.ss) {
+    Vector3D pa = s.pm_a->position;
+    Vector3D pb = s.pm_b->position;
+
+    spring_positions.col(si) << pa.x, pa.y, pa.z, 1.0;
+    spring_positions.col(si + 1) << pb.x, pb.y, pb.z, 1.0;
+
+    si += 2;
+  }
+
+  printed = 1;
+
+  //shader.setUniform("u_color", nanogui::Color(1.0f, 1.0f, 1.0f, 1.0f), false);
+  shader.uploadAttrib("in_position", spring_positions, false);
   // Commented out: the wireframe shader does not have this attribute
   //shader.uploadAttrib("in_normal", normals);
 

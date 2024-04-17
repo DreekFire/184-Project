@@ -41,6 +41,20 @@ struct ClothParameters {
   double ks;
 };
 
+struct Beest {
+  Beest() {}
+  Beest(int numLegs);
+  ~Beest();
+
+  void buildBeest();
+  void simulate(float t);
+
+  int numLegs;
+  float q;
+  vector<PointMass> pms;
+  vector<Spring> ss;
+};
+
 struct Cloth {
   Cloth() {}
   Cloth(double width, double height, int num_width_points,
@@ -73,6 +87,8 @@ struct Cloth {
   vector<vector<int>> pinned;
   vector<Spring> springs;
   ClothMesh *clothMesh;
+
+  Beest beest;
 
   // Spatial hashing
   unordered_map<float, vector<PointMass *> *> map;

@@ -7,7 +7,52 @@
 #include "collision/plane.h"
 #include "collision/sphere.h"
 
+#include "CGL/vector2D.h"
+
+#include "internal_coords/jansen.h"
+
 using namespace std;
+
+Beest::Beest(int numLegs) : numLegs(numLegs), q(0) {}
+
+Beest::~Beest() {
+  pms.clear();
+  ss.clear();
+}
+
+void Beest::buildBeest() {
+  for (int i = 0; i < 8 * numLegs; i++) {
+    pms.push_back(PointMass(Vector3D(0), false));
+  }
+
+  simulate(0);
+
+  for (int l = 0; l < numLegs; l++) {
+    int idx = 0; // l * 8;
+    ss.push_back(Spring(&(pms[idx + 1]), &pms[idx + 2], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 2]), &pms[idx + 3], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 2]), &pms[idx + 6], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx]), &pms[idx + 3], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx]), &pms[idx + 4], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 3]), &pms[idx + 4], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 4]), &pms[idx + 5], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx]), &pms[idx + 6], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 5]), &pms[idx + 6], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 5]), &pms[idx + 7], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 6]), &pms[idx + 7], STRUCTURAL));
+  }
+}
+
+void Beest::simulate(float dt) {
+  q += dt;
+  for (int l = 0; l < numLegs; l++) {
+    int idx = l * 8;
+    std::pair<std::vector<CGL::Vector2D>, std::vector<std::vector<CGL::Vector2D>>> pv = Jansen::resolve({q});
+    for (int i = 0; i < 8; i++) {
+      pms[idx + i].position = CGL::Vector3D(pv.first[i].x * 0.01, pv.first[i].y * 0.01, l);
+    }
+  }
+}
 
 Cloth::Cloth(double width, double height, int num_width_points,
              int num_height_points, float thickness) {
@@ -16,9 +61,6 @@ Cloth::Cloth(double width, double height, int num_width_points,
   this->num_width_points = num_width_points;
   this->num_height_points = num_height_points;
   this->thickness = thickness;
-
-  buildGrid();
-  buildClothMesh();
 }
 
 Cloth::~Cloth() {
@@ -30,6 +72,8 @@ Cloth::~Cloth() {
   }
 }
 void Cloth::buildGrid() {
+  beest = Beest(1);
+  beest.buildBeest();
   // TODO (Part 1): Build a grid of masses and springs.
     
     for (int i = 0; i < num_height_points; i++) {
@@ -59,37 +103,31 @@ void Cloth::buildGrid() {
       //Structural constraints exist between a point mass and the point mass to its left as well as the point mass above it.
       if (j - 1 >= 0) {
         //to the left
-        Spring *s = new Spring(pm, &point_masses[i * num_width_points + j - 1], STRUCTURAL);
-        springs.emplace_back(*s);
+        springs.push_back(Spring(pm, &point_masses[i * num_width_points + j - 1], STRUCTURAL));
       }
       if (i - 1 >= 0) {
         //above it
-        Spring *s = new Spring(pm, &point_masses[(i - 1) * num_width_points + j], STRUCTURAL);
-        springs.emplace_back(*s);
+        springs.push_back(Spring(pm, &point_masses[(i - 1) * num_width_points + j], STRUCTURAL));
       }
 
       //Shearing constraints exist between a point mass and the point mass to its diagonal upper left as well as the point mass to its diagonal upper right.
       if (j + 1 < num_width_points && i - 1 >= 0) {
         //upper right
-        Spring *s = new Spring(pm, &point_masses[(i - 1) * num_width_points + j + 1], SHEARING);
-        springs.emplace_back(*s);
+        springs.push_back(Spring(pm, &point_masses[(i - 1) * num_width_points + j + 1], SHEARING));
       }
       if (j - 1 >= 0 && i - 1 >= 0) {
         //upper left
-        Spring *s = new Spring(pm, &point_masses[(i - 1) * num_width_points + j - 1], SHEARING);
-        springs.emplace_back(*s);
+        springs.push_back(Spring(pm, &point_masses[(i - 1) * num_width_points + j - 1], SHEARING));
       }
 
       //Bending constraints exist between a point mass and the point mass two away to its left as well as the point mass two above it.
       if (j - 2 >= 0) {
         //two to the left
-        Spring *s = new Spring(pm, &point_masses[i * num_width_points + j - 2], BENDING);
-        springs.emplace_back(*s);
+        springs.push_back(Spring(pm, &point_masses[i * num_width_points + j - 2], BENDING));
       }
       if (i - 2 >= 0) {
         //two above it
-        Spring *s = new Spring(pm, &point_masses[(i - 2) * num_width_points + j], BENDING);
-        springs.emplace_back(*s);
+        springs.push_back(Spring(pm, &point_masses[(i - 2) * num_width_points + j], BENDING));
       }
     }
   }
@@ -99,103 +137,109 @@ void Cloth::buildGrid() {
 void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParameters *cp,
                      vector<Vector3D> external_accelerations,
                      vector<CollisionObject *> *collision_objects) {
-  double mass = width * height * cp->density / num_width_points / num_height_points;
-  double delta_t = 1.0f / frames_per_sec / simulation_steps;
+  // std::cout << beest.point_masses.size() << std::endl;
+  beest.simulate(1.0f / (frames_per_sec * simulation_steps));
+  // for (int i = 0; i < beest.point_masses.size(); i++) {
+  //   std::cout << beest.point_masses[i].position << std::endl;
+  // }
+  return;
+  // double mass = width * height * cp->density / num_width_points / num_height_points;
+  // double delta_t = 1.0f / frames_per_sec / simulation_steps;
 
-  // TODO (Part 2): Compute total force acting on each point mass.
-  for (int i = 0; i < point_masses.size(); i++) {
-	point_masses[i].forces = Vector3D(0, 0, 0);
-    for (int j = 0; j < external_accelerations.size(); j++) {
-        point_masses[i].forces += mass * external_accelerations[j];
-    }
-  }
-
-
-  // for each spring, add structural, shearing, and bending forces to the point masses if enabled
-  for (auto& spring : springs) {
-      e_spring_type s_type = spring.spring_type;
-      // if the type is enabled in the ClothParameters, add the spring force to the point masses
-      bool enabled = false;
-      if (s_type == STRUCTURAL) {
-		  enabled = cp->enable_structural_constraints;
-	  }
-      else if (s_type == SHEARING) {
-		  enabled = cp->enable_shearing_constraints;
-	  }
-      else if (s_type == BENDING) {
-		  enabled = cp->enable_bending_constraints;
-	  }
-      if (enabled) {
-		  Vector3D delta21 = spring.pm_b->position - spring.pm_a->position;
-		  double dist = delta21.norm();
-		  double overage = dist - spring.rest_length;
-          Vector3D force = cp->ks * overage * delta21.unit();
-          if (s_type == BENDING) {
-              force *= 0.2;
-          }
-          spring.pm_a->forces += force;
-          spring.pm_b->forces -= force;
-	  }
-  }
+  // // TODO (Part 2): Compute total force acting on each point mass.
+  // for (int i = 0; i < point_masses.size(); i++) {
+	// point_masses[i].forces = Vector3D(0, 0, 0);
+  //   for (int j = 0; j < external_accelerations.size(); j++) {
+  //       point_masses[i].forces += mass * external_accelerations[j];
+  //   }
+  // }
 
 
-  // TODO (Part 2): Use Verlet integration to compute new point mass positions
-  for (int i = 0; i < point_masses.size(); i++) {
-      if (!point_masses[i].pinned) {
-	  Vector3D temp = point_masses[i].position;
-	  point_masses[i].position = temp + (1 - cp->damping / 100) * (temp - point_masses[i].last_position) + (delta_t * delta_t * (point_masses[i].forces / mass));
-	  point_masses[i].last_position = temp;
-	}
-  }
-
-  // TODO (Part 4): Handle self-collisions.
-  // TODO (Part 4): Handle self-collisions.
-  build_spatial_map();
-  for (int i = 0; i < point_masses.size(); i++) {
-    self_collide(point_masses[i], simulation_steps);
-  }
-
-
-  // TODO (Part 3): Handle collisions with other primitives.
-  for (int i = 0; i < point_masses.size(); i++) {
-    for (int j = 0; j < collision_objects->size(); j++) {
-      if (dynamic_cast<Sphere *>((*collision_objects)[j])) {
-        Sphere *sphere = dynamic_cast<Sphere *>((*collision_objects)[j]);
-        sphere->collide(point_masses[i]);
-      }
-      else if (dynamic_cast<Plane *>((*collision_objects)[j])) {
-        Plane *plane = dynamic_cast<Plane *>((*collision_objects)[j]);
-        plane->collide(point_masses[i]);
-      }
-    }
-  }
+  // // for each spring, add structural, shearing, and bending forces to the point masses if enabled
+  // for (auto& spring : springs) {
+  //     e_spring_type s_type = spring.spring_type;
+  //     // if the type is enabled in the ClothParameters, add the spring force to the point masses
+  //     bool enabled = false;
+  //     if (s_type == STRUCTURAL) {
+	// 	  enabled = cp->enable_structural_constraints;
+	//   }
+  //     else if (s_type == SHEARING) {
+	// 	  enabled = cp->enable_shearing_constraints;
+	//   }
+  //     else if (s_type == BENDING) {
+	// 	  enabled = cp->enable_bending_constraints;
+	//   }
+  //     if (enabled) {
+	// 	  Vector3D delta21 = spring.pm_b->position - spring.pm_a->position;
+	// 	  double dist = delta21.norm();
+	// 	  double overage = dist - spring.rest_length;
+  //         Vector3D force = cp->ks * overage * delta21.unit();
+  //         if (s_type == BENDING) {
+  //             force *= 0.2;
+  //         }
+  //         spring.pm_a->forces += force;
+  //         spring.pm_b->forces -= force;
+	//   }
+  // }
 
 
-  // TODO (Part 2): Constrain the changes to be such that the spring does not change
-  // in length more than 10% per timestep [Provot 1995].
-  for (auto& spring : springs) {
-	PointMass *pm1 = spring.pm_a;
-    PointMass *pm2 = spring.pm_b;
-    Vector3D delta21 = pm2->position - pm1->position;
-    Vector3D delta12 = pm1->position - pm2->position;
-    double dist = delta21.norm();
-    double overage = dist - spring.rest_length * 1.1;
-    if (overage > 0) {
-        Vector3D correction1 = overage * delta21.unit();
-        Vector3D correction2 = overage * delta12.unit();
+  // // TODO (Part 2): Use Verlet integration to compute new point mass positions
+  // for (int i = 0; i < point_masses.size(); i++) {
+  //     if (!point_masses[i].pinned) {
+	//   Vector3D temp = point_masses[i].position;
+	//   point_masses[i].position = temp + (1 - cp->damping / 100) * (temp - point_masses[i].last_position) + (delta_t * delta_t * (point_masses[i].forces / mass));
+	//   point_masses[i].last_position = temp;
+	// }
+  // }
 
-        if (!pm1->pinned && !pm2->pinned) {
-            pm1->position += correction1 / 2;
-            pm2->position += correction2 / 2;
-        }
-        else if (!pm1->pinned) {
-			pm1->position += correction1;
-        }
-        else if (!pm2->pinned) {
-			pm2->position += correction2;
-		}
-	}
-  }
+  // // TODO (Part 4): Handle self-collisions.
+  // // TODO (Part 4): Handle self-collisions.
+  // build_spatial_map();
+  // for (int i = 0; i < point_masses.size(); i++) {
+  //   self_collide(point_masses[i], simulation_steps);
+  // }
+
+
+  // // TODO (Part 3): Handle collisions with other primitives.
+  // for (int i = 0; i < point_masses.size(); i++) {
+  //   for (int j = 0; j < collision_objects->size(); j++) {
+  //     if (dynamic_cast<Sphere *>((*collision_objects)[j])) {
+  //       Sphere *sphere = dynamic_cast<Sphere *>((*collision_objects)[j]);
+  //       sphere->collide(point_masses[i]);
+  //     }
+  //     else if (dynamic_cast<Plane *>((*collision_objects)[j])) {
+  //       Plane *plane = dynamic_cast<Plane *>((*collision_objects)[j]);
+  //       plane->collide(point_masses[i]);
+  //     }
+  //   }
+  // }
+
+
+  // // TODO (Part 2): Constrain the changes to be such that the spring does not change
+  // // in length more than 10% per timestep [Provot 1995].
+  // for (auto& spring : springs) {
+	// PointMass *pm1 = spring.pm_a;
+  //   PointMass *pm2 = spring.pm_b;
+  //   Vector3D delta21 = pm2->position - pm1->position;
+  //   Vector3D delta12 = pm1->position - pm2->position;
+  //   double dist = delta21.norm();
+  //   double overage = dist - spring.rest_length * 1.1;
+  //   if (overage > 0) {
+  //       Vector3D correction1 = overage * delta21.unit();
+  //       Vector3D correction2 = overage * delta12.unit();
+
+  //       if (!pm1->pinned && !pm2->pinned) {
+  //           pm1->position += correction1 / 2;
+  //           pm2->position += correction2 / 2;
+  //       }
+  //       else if (!pm1->pinned) {
+	// 		pm1->position += correction1;
+  //       }
+  //       else if (!pm2->pinned) {
+	// 		pm2->position += correction2;
+	// 	}
+	// }
+  // }
 
 }
 
