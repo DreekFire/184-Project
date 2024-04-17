@@ -47,10 +47,20 @@ float noise(vec2 st) {
 }
 
 // Function to determine if a sparkle should appear based on random value
-float calculateSparkle(vec2 uv) {
-    float sparkleThreshold = 0.70; // Adjust as needed for sparkle density
-    float randomValue = noise(uv);
-    return smoothstep(sparkleThreshold - 0.05, sparkleThreshold, randomValue); // Adjust the range for sparkle appearance
+// Function to determine if a sparkle should appear based on random value
+vec3 calculateSparkle(vec2 uv) {
+    float sparkleThreshold = 0.50; // Adjust as needed for sparkle density
+    float randomValueX = noise(uv + vec2(0.1, 0.0)); // Use different offsets for each component to ensure variation
+    float randomValueY = noise(uv + vec2(0.0, 0.1));
+    float randomValueZ = noise(uv + vec2(0.2, 0.3));
+    
+    // Apply smoothstep to each component individually
+    float sparkleIntensityX = smoothstep(sparkleThreshold - 0.05, sparkleThreshold, randomValueX);
+    float sparkleIntensityY = smoothstep(sparkleThreshold - 0.05, sparkleThreshold, randomValueY);
+    float sparkleIntensityZ = smoothstep(sparkleThreshold - 0.05, sparkleThreshold, randomValueZ);
+    
+    // Return the perturbation vector
+    return vec3(sparkleIntensityX, sparkleIntensityY, sparkleIntensityZ);
 }
 
 void main() {
@@ -73,8 +83,8 @@ void main() {
     float v = v_uv.y;
 
     // scale these to allow tiling of the texture
-    u *= 1.;
-    v *= 1.;
+    u *= 20.;
+    v *= 20.;
 
     // grab scaling values
     float normal_scaling = u_normal_scaling;
@@ -86,6 +96,10 @@ void main() {
 
     // local space normal 
     vec3 local_normal = vec3(-dU, -dV, 1.0);
+
+    // use the sparkle function to determine if a sparkle should appear and adjust the normal accordingly
+    vec3 sparkleIntensity = calculateSparkle(v_uv);
+    local_normal += sparkleIntensity * 0.1; // Adjust sparkle intensity as needed
 
     // calculate displaced normal
     vec3 n_d = normalize(TBN * local_normal);
@@ -101,10 +115,10 @@ void main() {
     vec4 I_a = vec4(0.5, 0.5, 0.5, 0);
 
     // arbitrary specular coefficient
-    float k_s = 2.0;
+    float k_s = 1.5;
 
     // arbitrary p value
-    float p = 20.0;
+    float p = 15.0;
 
     // find normal and cos_theta_nl
     vec3 l = u_light_pos - vec3(v_position);
@@ -124,12 +138,6 @@ void main() {
 
     // Apply the phong model to the base color
     vec4 phong_color = (k_a * I_a) + (k_d * I_r2 * u_color * cos_theta_nl) + (k_s * I_r2 * u_color * pow(cos_theta_nh, p));
-
-    // Calculate sparkle intensity based on random value
-    float sparkleIntensity = calculateSparkle(v_uv);
-
-    // Add sparkle effect
-    phong_color.rgb -= sparkleIntensity * 0.1; // Adjust sparkle intensity and color as needed
 
     out_color = phong_color;
     out_color.a = 1.0;
