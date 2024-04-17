@@ -3,11 +3,12 @@
 uniform mat4 u_view_projection;
 uniform mat4 u_model;
 
-uniform sampler2D u_texture_2;
-uniform vec2 u_texture_2_size;
+uniform sampler2D u_ripples;
+uniform vec2 u_ripples_size;
 
 uniform float u_normal_scaling;
 uniform float u_height_scaling;
+const float u_tile_scale = 10.; // Scale factor for tiling
 
 in vec4 in_position;
 in vec4 in_normal;

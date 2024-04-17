@@ -69,17 +69,20 @@ void ClothSimulator::load_textures() {
   glGenTextures(1, &m_gl_texture_2);
   glGenTextures(1, &m_gl_texture_3);
   glGenTextures(1, &m_gl_texture_4);
+  glGenTextures(1, &m_gl_ripples);
   glGenTextures(1, &m_gl_cubemap_tex);
   
   m_gl_texture_1_size = load_texture(1, m_gl_texture_1, (m_project_root + "/textures/texture_1.png").c_str());
   m_gl_texture_2_size = load_texture(2, m_gl_texture_2, (m_project_root + "/textures/texture_2.png").c_str());
   m_gl_texture_3_size = load_texture(3, m_gl_texture_3, (m_project_root + "/textures/texture_3.png").c_str());
   m_gl_texture_4_size = load_texture(4, m_gl_texture_4, (m_project_root + "/textures/texture_4.png").c_str());
+  m_gl_ripples_size = load_texture(0, m_gl_ripples, (m_project_root + "/textures/ripples.jpg").c_str());
   
   std::cout << "Texture 1 loaded with size: " << m_gl_texture_1_size << std::endl;
   std::cout << "Texture 2 loaded with size: " << m_gl_texture_2_size << std::endl;
   std::cout << "Texture 3 loaded with size: " << m_gl_texture_3_size << std::endl;
   std::cout << "Texture 4 loaded with size: " << m_gl_texture_4_size << std::endl;
+  std::cout << "Ripples loaded with size: " << m_gl_ripples_size << std::endl;
   
   std::vector<std::string> cubemap_fnames = {
     m_project_root + "/textures/cube/posx.jpg",
@@ -337,11 +340,13 @@ void ClothSimulator::drawContents() {
     sandShader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
     sandShader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
     sandShader.setUniform("u_texture_4_size", Vector2f(m_gl_texture_4_size.x, m_gl_texture_4_size.y), false);
+    sandShader.setUniform("u_ripples_size", Vector2f(m_gl_ripples_size.x, m_gl_ripples_size.y), false);
     // Textures
     sandShader.setUniform("u_texture_1", 1, false);
     sandShader.setUniform("u_texture_2", 2, false);
     sandShader.setUniform("u_texture_3", 3, false);
     sandShader.setUniform("u_texture_4", 4, false);
+    sandShader.setUniform("u_ripples", 5, false);
 
     sandShader.setUniform("u_normal_scaling", m_normal_scaling, false);
     sandShader.setUniform("u_height_scaling", m_height_scaling, false);

@@ -80,10 +80,12 @@ private:
   Vector3D m_gl_texture_2_size;
   Vector3D m_gl_texture_3_size;
   Vector3D m_gl_texture_4_size;
+  Vector3D m_gl_ripples_size;
   GLuint m_gl_texture_1;
   GLuint m_gl_texture_2;
   GLuint m_gl_texture_3;
   GLuint m_gl_texture_4;
+  GLuint m_gl_ripples;
   GLuint m_gl_cubemap_tex;
   
   // OpenGL customizable inputs

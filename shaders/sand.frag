@@ -4,10 +4,13 @@ uniform vec3 u_cam_pos;
 uniform vec3 u_light_pos;
 uniform vec3 u_light_intensity;
 
-const vec4 u_color = vec4(0.9, 0.5, 0.0, 0.0);
+const vec4 u_color = vec4(0.96, 0.84, 0.69, 0.0); // this is the color of the sand, on the lighter side since it looks a bit more like a real north american dune or a beach
 
 uniform sampler2D u_texture_4;
 uniform vec2 u_texture_4_size;
+
+uniform sampler2D u_ripples;
+uniform vec2 u_ripples_size;
 
 uniform float u_normal_scaling;
 uniform float u_height_scaling;
@@ -20,7 +23,7 @@ in vec2 v_uv;
 out vec4 out_color;
 
 float h(vec2 uv) {
-    return texture(u_texture_4, uv).r;
+    return texture(u_ripples, uv).r;
 }
 
 // Pseudo-random number generator based on fragment position
@@ -52,18 +55,39 @@ float calculateSparkle(vec2 uv) {
 
 void main() {
     // Bump Mapping
-    float t_width = u_texture_4_size.x;
-    float t_height = u_texture_4_size.y;
+    // find the normal given the texture
+    float t_width = u_ripples_size.x;
+    float t_height = u_ripples_size.y;
+
+    // find tangent vector
     vec3 t = normalize(vec3(v_tangent));
+
+    // create B vector (cross product of normal and tangent)
     vec3 b = cross(normalize(vec3(v_normal)), t);
+
+    // create TBN matrix
     mat3 TBN = mat3(t, b, normalize(vec3(v_normal)));
+
+    // get current u and v values
     float u = v_uv.x;
     float v = v_uv.y;
+
+    // scale these to allow tiling of the texture
+    u *= 1.;
+    v *= 1.;
+
+    // grab scaling values
     float normal_scaling = u_normal_scaling;
     float height_scaling = u_height_scaling;
+
+    // calculate dU and dV
     float dU = (h(vec2(u + normal_scaling / t_width, v)) - h(vec2(u, v))) / (height_scaling * normal_scaling);
     float dV = (h(vec2(u, v + normal_scaling / t_height)) - h(vec2(u, v))) / (height_scaling * normal_scaling);
+
+    // local space normal 
     vec3 local_normal = vec3(-dU, -dV, 1.0);
+
+    // calculate displaced normal
     vec3 n_d = normalize(TBN * local_normal);
 
     // Phong Shading
@@ -80,7 +104,7 @@ void main() {
     float k_s = 2.0;
 
     // arbitrary p value
-    float p = 15.0;
+    float p = 20.0;
 
     // find normal and cos_theta_nl
     vec3 l = u_light_pos - vec3(v_position);
