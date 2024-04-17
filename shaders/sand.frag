@@ -4,7 +4,7 @@ uniform vec3 u_cam_pos;
 uniform vec3 u_light_pos;
 uniform vec3 u_light_intensity;
 
-uniform vec4 u_color;
+const vec4 u_color = vec4(0.9, 0.5, 0.0, 0.0);
 
 uniform sampler2D u_texture_4;
 uniform vec2 u_texture_4_size;
@@ -28,26 +28,24 @@ float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
-vec2 hash( vec2 p )                       // rand in [-1,1]
-{
-  p = vec2(dot(p,vec2(127.1,311.7)),
-           dot(p,vec2(269.5,183.3)));
-  return -1. + 2.*fract(sin(p+20.)*53758.5453123);
-}
-
 float noise(vec2 st) {
-    vec2 n = st;
-    vec2 p = floor(n);
-    vec2 f = fract(n);
-    f = f * f * (3.0 - 2.0 * f);
-    vec2 uv = (p + vec2(37.0, 17.0)) + f;
-    vec2 rg = hash(uv / 256.0).yx;
-    return 0.5 * mix(rg.x, rg.y, 0.5);
+    float total = 0.0;
+    float persistence = 0.5;
+    int octaves = 4;
+
+    for (int i = 0; i < octaves; i++) {
+        float frequency = pow(2.0, float(i));
+        float amplitude = pow(persistence, float(octaves - i));
+
+        total += random(st * frequency) * amplitude;
+    }
+
+    return total;
 }
 
 // Function to determine if a sparkle should appear based on random value
 float calculateSparkle(vec2 uv) {
-    float sparkleThreshold = 0.85; // Adjust as needed for sparkle density
+    float sparkleThreshold = 0.70; // Adjust as needed for sparkle density
     float randomValue = noise(uv);
     return smoothstep(sparkleThreshold - 0.05, sparkleThreshold, randomValue); // Adjust the range for sparkle appearance
 }
@@ -70,16 +68,16 @@ void main() {
 
     // Phong Shading
     // arbitrary diffuse coefficient
-    float k_d = 0.5;
+    float k_d = 2.5;
 
     // arbitrary ambient coefficient
-    float k_a = 1.0;
+    float k_a = 0.7;
 
     // arbitrary ambient intensity
-    vec4 I_a = vec4(0.5, 0.5, 0.48, 0);
+    vec4 I_a = vec4(0.5, 0.5, 0.5, 0);
 
     // arbitrary specular coefficient
-    float k_s = 2.5;
+    float k_s = 2.0;
 
     // arbitrary p value
     float p = 15.0;
@@ -107,7 +105,7 @@ void main() {
     float sparkleIntensity = calculateSparkle(v_uv);
 
     // Add sparkle effect
-    phong_color.rgb += sparkleIntensity * 0.1; // Adjust sparkle intensity and color as needed
+    phong_color.rgb -= sparkleIntensity * 0.1; // Adjust sparkle intensity and color as needed
 
     out_color = phong_color;
     out_color.a = 1.0;

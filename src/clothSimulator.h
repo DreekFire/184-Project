@@ -40,6 +40,7 @@ private:
   void drawWireframe(GLShader &shader);
   void drawNormals(GLShader &shader);
   void drawPhong(GLShader &shader);
+  void drawSky(GLShader &shader);
   
   void load_shaders();
   void load_textures();

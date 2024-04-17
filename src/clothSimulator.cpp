@@ -254,9 +254,23 @@ void ClothSimulator::drawContents() {
 
   const UserShader& active_shader = shaders[active_shader_idx];
 
-  // grab the sand shader from the end of the list
-  const UserShader& sand_shader = shaders[shaders.size() - 1];
+  // grab the sand shader from the list
+  const UserShader& sand_shader = shaders[shaders.size() - 2];
 
+  // grab the sky shader from the list
+  const UserShader& sky_shader = shaders[shaders.size() - 1];
+
+  // bind the sky shader and add all the uniforms and other needed stuff to make it work
+  GLShader &skyShader = *sky_shader.nanogui_shader;
+  skyShader.bind();
+  // send the sun position to the shader and the sun color
+  skyShader.setUniform("u_sun_position", Vector3f(150, 500, -700), false);
+  skyShader.setUniform("u_sun_color", Vector3f(1, 1, 1), false);
+
+  // draw the sky (it requires no uniforms)
+  drawSky(skyShader);
+
+  // bind the cloth shader
   GLShader &shader = *active_shader.nanogui_shader;
   shader.bind();
 
@@ -308,6 +322,7 @@ void ClothSimulator::drawContents() {
   }
 
   for (CollisionObject *co : *collision_objects) {
+    // grab the sand shader and add all the uniforms and other needed stuff to make it work
     GLShader &sandShader = *sand_shader.nanogui_shader;   
     sandShader.bind();
     sandShader.setUniform("u_model", model);
@@ -334,6 +349,9 @@ void ClothSimulator::drawContents() {
     sandShader.setUniform("u_texture_cubemap", 5, false);
     co->render(sandShader);
   }
+
+
+
 }
 
 void ClothSimulator::drawWireframe(GLShader &shader) {
@@ -463,6 +481,13 @@ void ClothSimulator::drawPhong(GLShader &shader) {
   shader.uploadAttrib("in_tangent", tangents, false);
 
   shader.drawArray(GL_TRIANGLES, 0, num_tris * 3);
+}
+
+
+void ClothSimulator::drawSky(GLShader& shader) {
+    // draw the sky as a 2d quad at the far plane
+    // the shader already has the sun position and color, no need to send it again
+    shader.drawArray(GL_TRIANGLES, 0, 6);
 }
 
 // ----------------------------------------------------------------------------
