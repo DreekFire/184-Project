@@ -10,6 +10,7 @@
 #include "cloth.h"
 #include "collision/plane.h"
 #include "collision/sphere.h"
+#include "collision/dune.h"
 #include "misc/camera_info.h"
 #include "misc/file_utils.h"
 // Needed to generate stb_image binaries. Should only define in exactly one source file importing stb_image.h.
@@ -68,17 +69,20 @@ void ClothSimulator::load_textures() {
   glGenTextures(1, &m_gl_texture_2);
   glGenTextures(1, &m_gl_texture_3);
   glGenTextures(1, &m_gl_texture_4);
+  glGenTextures(1, &m_gl_ripples);
   glGenTextures(1, &m_gl_cubemap_tex);
   
   m_gl_texture_1_size = load_texture(1, m_gl_texture_1, (m_project_root + "/textures/texture_1.png").c_str());
   m_gl_texture_2_size = load_texture(2, m_gl_texture_2, (m_project_root + "/textures/texture_2.png").c_str());
   m_gl_texture_3_size = load_texture(3, m_gl_texture_3, (m_project_root + "/textures/texture_3.png").c_str());
   m_gl_texture_4_size = load_texture(4, m_gl_texture_4, (m_project_root + "/textures/texture_4.png").c_str());
+  m_gl_ripples_size = load_texture(0, m_gl_ripples, (m_project_root + "/textures/ripples.jpg").c_str());
   
   std::cout << "Texture 1 loaded with size: " << m_gl_texture_1_size << std::endl;
   std::cout << "Texture 2 loaded with size: " << m_gl_texture_2_size << std::endl;
   std::cout << "Texture 3 loaded with size: " << m_gl_texture_3_size << std::endl;
   std::cout << "Texture 4 loaded with size: " << m_gl_texture_4_size << std::endl;
+  std::cout << "Ripples loaded with size: " << m_gl_ripples_size << std::endl;
   
   std::vector<std::string> cubemap_fnames = {
     m_project_root + "/textures/cube/posx.jpg",
@@ -254,6 +258,23 @@ void ClothSimulator::drawContents() {
 
   const UserShader& active_shader = shaders[active_shader_idx];
 
+  // grab the sand shader from the list
+  const UserShader& sand_shader = shaders[shaders.size() - 2];
+
+  // grab the sky shader from the list
+  const UserShader& sky_shader = shaders[shaders.size() - 1];
+
+  // bind the sky shader and add all the uniforms and other needed stuff to make it work
+  GLShader &skyShader = *sky_shader.nanogui_shader;
+  skyShader.bind();
+  // send the sun position to the shader and the sun color
+  skyShader.setUniform("u_sun_position", Vector3f(150, 500, -700), false);
+  skyShader.setUniform("u_sun_color", Vector3f(1, 1, 1), false);
+
+  // draw the sky (it requires no uniforms)
+  drawSky(skyShader);
+
+  // bind the cloth shader
   GLShader &shader = *active_shader.nanogui_shader;
   shader.bind();
 
@@ -285,8 +306,8 @@ void ClothSimulator::drawContents() {
     Vector3D cam_pos = camera.position();
     shader.setUniform("u_color", color, false);
     shader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
-    shader.setUniform("u_light_pos", Vector3f(0.5, 2, 2), false);
-    shader.setUniform("u_light_intensity", Vector3f(3, 3, 3), false);
+    shader.setUniform("u_light_pos", Vector3f(150, 500, -700), false);
+    shader.setUniform("u_light_intensity", Vector3f(200000, 200000, 200000), false);
     shader.setUniform("u_texture_1_size", Vector2f(m_gl_texture_1_size.x, m_gl_texture_1_size.y), false);
     shader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
     shader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
@@ -306,8 +327,38 @@ void ClothSimulator::drawContents() {
   }
 
   for (CollisionObject *co : *collision_objects) {
-    co->render(shader);
+    // grab the sand shader and add all the uniforms and other needed stuff to make it work
+    GLShader &sandShader = *sand_shader.nanogui_shader;   
+    sandShader.bind();
+    sandShader.setUniform("u_model", model);
+    sandShader.setUniform("u_view_projection", viewProjection);
+    // Others
+    Vector3D cam_pos = camera.position();
+    sandShader.setUniform("u_color", color, false);
+    sandShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
+    sandShader.setUniform("u_light_pos", Vector3f(150, 500, -700), false);
+    sandShader.setUniform("u_light_intensity", Vector3f(200000, 200000, 200000), false);
+    sandShader.setUniform("u_texture_1_size", Vector2f(m_gl_texture_1_size.x, m_gl_texture_1_size.y), false);
+    sandShader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
+    sandShader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
+    sandShader.setUniform("u_texture_4_size", Vector2f(m_gl_texture_4_size.x, m_gl_texture_4_size.y), false);
+    sandShader.setUniform("u_ripples_size", Vector2f(m_gl_ripples_size.x, m_gl_ripples_size.y), false);
+    // Textures
+    sandShader.setUniform("u_texture_1", 1, false);
+    sandShader.setUniform("u_texture_2", 2, false);
+    sandShader.setUniform("u_texture_3", 3, false);
+    sandShader.setUniform("u_texture_4", 4, false);
+    sandShader.setUniform("u_ripples", 5, false);
+
+    sandShader.setUniform("u_normal_scaling", m_normal_scaling, false);
+    sandShader.setUniform("u_height_scaling", m_height_scaling, false);
+
+    sandShader.setUniform("u_texture_cubemap", 5, false);
+    co->render(sandShader);
   }
+
+
+
 }
 
 void ClothSimulator::drawWireframe(GLShader &shader) {
@@ -480,6 +531,13 @@ void ClothSimulator::drawPhong(GLShader &shader) {
   shader.uploadAttrib("in_tangent", tangents, false);
 
   shader.drawArray(GL_TRIANGLES, 0, num_tris * 3);
+}
+
+
+void ClothSimulator::drawSky(GLShader& shader) {
+    // draw the sky as a 2d quad at the far plane
+    // the shader already has the sun position and color, no need to send it again
+    shader.drawArray(GL_TRIANGLES, 0, 6);
 }
 
 // ----------------------------------------------------------------------------

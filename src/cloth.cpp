@@ -6,6 +6,7 @@
 #include "cloth.h"
 #include "collision/plane.h"
 #include "collision/sphere.h"
+#include "collision/dune.h"
 
 #include "CGL/vector2D.h"
 
@@ -200,33 +201,37 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
   // }
 
 
-  // // TODO (Part 3): Handle collisions with other primitives.
-  // for (int i = 0; i < point_masses.size(); i++) {
-  //   for (int j = 0; j < collision_objects->size(); j++) {
-  //     if (dynamic_cast<Sphere *>((*collision_objects)[j])) {
-  //       Sphere *sphere = dynamic_cast<Sphere *>((*collision_objects)[j]);
-  //       sphere->collide(point_masses[i]);
-  //     }
-  //     else if (dynamic_cast<Plane *>((*collision_objects)[j])) {
-  //       Plane *plane = dynamic_cast<Plane *>((*collision_objects)[j]);
-  //       plane->collide(point_masses[i]);
-  //     }
-  //   }
-  // }
+  // TODO (Part 3): Handle collisions with other primitives.
+  for (int i = 0; i < point_masses.size(); i++) {
+    for (int j = 0; j < collision_objects->size(); j++) {
+      if (dynamic_cast<Sphere *>((*collision_objects)[j])) {
+        Sphere *sphere = dynamic_cast<Sphere *>((*collision_objects)[j]);
+        sphere->collide(point_masses[i]);
+      }
+	  else if (dynamic_cast<Dune *>((*collision_objects)[j])) {
+		Dune *dune = dynamic_cast<Dune *>((*collision_objects)[j]);
+		dune->collide(point_masses[i]);
+	  } 
+      else if (dynamic_cast<Plane *>((*collision_objects)[j])) {
+        Plane *plane = dynamic_cast<Plane *>((*collision_objects)[j]);
+        plane->collide(point_masses[i]);
+      }
+    }
+  }
 
 
-  // // TODO (Part 2): Constrain the changes to be such that the spring does not change
-  // // in length more than 10% per timestep [Provot 1995].
-  // for (auto& spring : springs) {
-	// PointMass *pm1 = spring.pm_a;
-  //   PointMass *pm2 = spring.pm_b;
-  //   Vector3D delta21 = pm2->position - pm1->position;
-  //   Vector3D delta12 = pm1->position - pm2->position;
-  //   double dist = delta21.norm();
-  //   double overage = dist - spring.rest_length * 1.1;
-  //   if (overage > 0) {
-  //       Vector3D correction1 = overage * delta21.unit();
-  //       Vector3D correction2 = overage * delta12.unit();
+  // TODO (Part 2): Constrain the changes to be such that the spring does not change
+  // in length more than 10% per timestep [Provot 1995].
+  for (auto& spring : springs) {
+	PointMass *pm1 = spring.pm_a;
+    PointMass *pm2 = spring.pm_b;
+    Vector3D delta21 = pm2->position - pm1->position;
+    Vector3D delta12 = pm1->position - pm2->position;
+    double dist = delta21.norm();
+    double overage = dist - spring.rest_length * 1.1;
+    if (overage > 0) {
+        Vector3D correction1 = overage * delta21.unit();
+        Vector3D correction2 = overage * delta12.unit();
 
   //       if (!pm1->pinned && !pm2->pinned) {
   //           pm1->position += correction1 / 2;
