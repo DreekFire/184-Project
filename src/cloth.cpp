@@ -7,6 +7,7 @@
 #include "collision/plane.h"
 #include "collision/sphere.h"
 #include "collision/dune.h"
+#include "collision/cube.h"
 
 #include "CGL/vector2D.h"
 
