@@ -138,67 +138,63 @@ void Cloth::buildGrid() {
 void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParameters *cp,
                      vector<Vector3D> external_accelerations,
                      vector<CollisionObject *> *collision_objects) {
-  // std::cout << beest.point_masses.size() << std::endl;
   beest.simulate(1.0f / (frames_per_sec * simulation_steps));
-  // for (int i = 0; i < beest.point_masses.size(); i++) {
-  //   std::cout << beest.point_masses[i].position << std::endl;
-  // }
-  return;
-  // double mass = width * height * cp->density / num_width_points / num_height_points;
-  // double delta_t = 1.0f / frames_per_sec / simulation_steps;
+ 
+  double mass = width * height * cp->density / num_width_points / num_height_points;
+  double delta_t = 1.0f / frames_per_sec / simulation_steps;
 
-  // // TODO (Part 2): Compute total force acting on each point mass.
-  // for (int i = 0; i < point_masses.size(); i++) {
-	// point_masses[i].forces = Vector3D(0, 0, 0);
-  //   for (int j = 0; j < external_accelerations.size(); j++) {
-  //       point_masses[i].forces += mass * external_accelerations[j];
-  //   }
-  // }
+  // TODO (Part 2): Compute total force acting on each point mass.
+  for (int i = 0; i < point_masses.size(); i++) {
+	point_masses[i].forces = Vector3D(0, 0, 0);
+    for (int j = 0; j < external_accelerations.size(); j++) {
+      point_masses[i].forces += mass * external_accelerations[j];
+    }
+  }
 
 
-  // // for each spring, add structural, shearing, and bending forces to the point masses if enabled
-  // for (auto& spring : springs) {
-  //     e_spring_type s_type = spring.spring_type;
-  //     // if the type is enabled in the ClothParameters, add the spring force to the point masses
-  //     bool enabled = false;
-  //     if (s_type == STRUCTURAL) {
-	// 	  enabled = cp->enable_structural_constraints;
-	//   }
-  //     else if (s_type == SHEARING) {
-	// 	  enabled = cp->enable_shearing_constraints;
-	//   }
-  //     else if (s_type == BENDING) {
-	// 	  enabled = cp->enable_bending_constraints;
-	//   }
-  //     if (enabled) {
-	// 	  Vector3D delta21 = spring.pm_b->position - spring.pm_a->position;
-	// 	  double dist = delta21.norm();
-	// 	  double overage = dist - spring.rest_length;
-  //         Vector3D force = cp->ks * overage * delta21.unit();
-  //         if (s_type == BENDING) {
-  //             force *= 0.2;
-  //         }
-  //         spring.pm_a->forces += force;
-  //         spring.pm_b->forces -= force;
-	//   }
-  // }
+   // for each spring, add structural, shearing, and bending forces to the point masses if enabled
+   for (auto& spring : springs) {
+       e_spring_type s_type = spring.spring_type;
+       // if the type is enabled in the ClothParameters, add the spring force to the point masses
+       bool enabled = false;
+       if (s_type == STRUCTURAL) {
+	 	  enabled = cp->enable_structural_constraints;
+	   }
+       else if (s_type == SHEARING) {
+	 	  enabled = cp->enable_shearing_constraints;
+	   }
+       else if (s_type == BENDING) {
+	 	  enabled = cp->enable_bending_constraints;
+	   }
+       if (enabled) {
+	 	  Vector3D delta21 = spring.pm_b->position - spring.pm_a->position;
+	 	  double dist = delta21.norm();
+	 	  double overage = dist - spring.rest_length;
+           Vector3D force = cp->ks * overage * delta21.unit();
+           if (s_type == BENDING) {
+               force *= 0.2;
+           }
+           spring.pm_a->forces += force;
+           spring.pm_b->forces -= force;
+	   }
+   }
 
 
-  // // TODO (Part 2): Use Verlet integration to compute new point mass positions
-  // for (int i = 0; i < point_masses.size(); i++) {
-  //     if (!point_masses[i].pinned) {
-	//   Vector3D temp = point_masses[i].position;
-	//   point_masses[i].position = temp + (1 - cp->damping / 100) * (temp - point_masses[i].last_position) + (delta_t * delta_t * (point_masses[i].forces / mass));
-	//   point_masses[i].last_position = temp;
-	// }
-  // }
+   // TODO (Part 2): Use Verlet integration to compute new point mass positions
+   for (int i = 0; i < point_masses.size(); i++) {
+       if (!point_masses[i].pinned) {
+	   Vector3D temp = point_masses[i].position;
+	   point_masses[i].position = temp + (1 - cp->damping / 100) * (temp - point_masses[i].last_position) + (delta_t * delta_t * (point_masses[i].forces / mass));
+	   point_masses[i].last_position = temp;
+	 }
+   }
 
-  // // TODO (Part 4): Handle self-collisions.
-  // // TODO (Part 4): Handle self-collisions.
-  // build_spatial_map();
-  // for (int i = 0; i < point_masses.size(); i++) {
-  //   self_collide(point_masses[i], simulation_steps);
-  // }
+   // TODO (Part 4): Handle self-collisions.
+   // TODO (Part 4): Handle self-collisions.
+   build_spatial_map();
+   for (int i = 0; i < point_masses.size(); i++) {
+     self_collide(point_masses[i], simulation_steps);
+   }
 
 
   // TODO (Part 3): Handle collisions with other primitives.
@@ -233,18 +229,18 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
         Vector3D correction1 = overage * delta21.unit();
         Vector3D correction2 = overage * delta12.unit();
 
-  //       if (!pm1->pinned && !pm2->pinned) {
-  //           pm1->position += correction1 / 2;
-  //           pm2->position += correction2 / 2;
-  //       }
-  //       else if (!pm1->pinned) {
-	// 		pm1->position += correction1;
-  //       }
-  //       else if (!pm2->pinned) {
-	// 		pm2->position += correction2;
-	// 	}
-	// }
-  // }
+         if (!pm1->pinned && !pm2->pinned) {
+             pm1->position += correction1 / 2;
+             pm2->position += correction2 / 2;
+         }
+         else if (!pm1->pinned) {
+	 		pm1->position += correction1;
+         }
+         else if (!pm2->pinned) {
+	 		pm2->position += correction2;
+	 	}
+	 }
+   }
 
 }
 
