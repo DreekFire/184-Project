@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 # Cloth simulation source
 set(CLOTHSIM_VIEWER_SOURCE
@@ -60,6 +60,7 @@ include_directories(
   ${CGL_INCLUDE_DIRS}
   ${FREETYPE_INCLUDE_DIRS}
   ${NANOGUI_EXTRA_INCS}
+  ${EIGEN_INCLUDE_DIRS}
 )
 
 #-------------------------------------------------------------------------------
