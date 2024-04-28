@@ -11,6 +11,9 @@
 #include "collision/collisionObject.h"
 #include "spring.h"
 
+#include "collision/cylinder.h"
+
+
 using namespace CGL;
 using namespace std;
 
@@ -45,7 +48,7 @@ struct Beest {
   Beest() {}
   Beest(int numLegs);
   ~Beest();
-
+  void addTube();
   void buildBeest();
   void simulate(float t);
 
@@ -53,6 +56,7 @@ struct Beest {
   float q;
   vector<PointMass> pms;
   vector<Spring> ss;
+  vector<Cylinder> cs;
 };
 
 struct Cloth {

@@ -11,6 +11,8 @@
 #include "collision/plane.h"
 #include "collision/sphere.h"
 #include "collision/dune.h"
+#include "collision/cylinder.h"
+
 #include "misc/camera_info.h"
 #include "misc/file_utils.h"
 // Needed to generate stb_image binaries. Should only define in exactly one source file importing stb_image.h.
@@ -246,14 +248,6 @@ bool ClothSimulator::isAlive() { return is_alive; }
 void ClothSimulator::drawContents() {
   glEnable(GL_DEPTH_TEST);
 
-  if (!is_paused) {
-    vector<Vector3D> external_accelerations = {gravity};
-
-    for (int i = 0; i < simulation_steps; i++) {
-      cloth->simulate(frames_per_sec, simulation_steps, cp, external_accelerations, collision_objects);
-    }
-  }
-
   // Bind the active shader
 
   const UserShader& active_shader = shaders[active_shader_idx];
@@ -290,6 +284,20 @@ void ClothSimulator::drawContents() {
 
   shader.setUniform("u_model", model);
   shader.setUniform("u_view_projection", viewProjection);
+
+  if (!is_paused) {
+    vector<Vector3D> external_accelerations = {gravity};
+
+    for (int i = 0; i < simulation_steps; i++) {
+      cloth->simulate(frames_per_sec, simulation_steps, cp, external_accelerations, collision_objects);
+      for(auto leg: cloth->beest.cs) {
+        leg.render(shader);
+        // cout << "Leg renderedred";
+      }
+    }
+  }
+
+  
 
   switch (active_shader.type_hint) {
   case WIREFRAME:

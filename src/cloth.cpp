@@ -7,6 +7,7 @@
 #include "collision/plane.h"
 #include "collision/sphere.h"
 #include "collision/dune.h"
+#include "collision/cylinder.h"
 
 #include "CGL/vector2D.h"
 
@@ -21,12 +22,15 @@ Beest::~Beest() {
   ss.clear();
 }
 
+void Beest::addTube() {
+
+}
+
 void Beest::buildBeest() {
   for (int i = 0; i < 8 * numLegs; i++) {
     pms.push_back(PointMass(Vector3D(0), false));
   }
 
-  simulate(0);
 
   for (int l = 0; l < numLegs; l++) {
     int idx = 0; // l * 8;
@@ -41,7 +45,20 @@ void Beest::buildBeest() {
     ss.push_back(Spring(&(pms[idx + 5]), &pms[idx + 6], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 5]), &pms[idx + 7], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 6]), &pms[idx + 7], STRUCTURAL));
+    vector<vector<int>> connections{{1, 2}, {2, 3}, {2, 6}, {0, 3}, {0, 4}, {4, 5}, {0, 6}, {5, 6}, {5, 7}, {6, 7}};
+
+    for (int i = 0; i < 10; i++) {
+      Vector3D a = pms[connections[i][0]].position;
+      Vector3D b = pms[connections[i][1]].position;
+      Vector3D center = (a + b) / 2;
+      Vector3D axis = a - b;
+      axis.normalize();
+      double dist = (a - b).norm2();
+      cs.push_back(Cylinder(center, axis, 0.1, dist, 0.5));
+    }
   }
+  simulate(0);
+
 }
 
 void Beest::simulate(float dt) {
@@ -52,6 +69,25 @@ void Beest::simulate(float dt) {
     for (int i = 0; i < 8; i++) {
       pms[idx + i].position = CGL::Vector3D(pv.first[i].x * 0.01, pv.first[i].y * 0.01, l);
     }
+
+    vector<vector<int>> connections{{1, 2}, {2, 3}, {2, 6}, {0, 3}, {0, 4}, {4, 5}, {0, 6}, {5, 6}, {5, 7}, {6, 7}};
+
+    for (int i = 0; i < 10; i++) {
+      Vector3D a = pms[connections[i][0]].position;
+      Vector3D b = pms[connections[i][1]].position;
+      Vector3D center = (a + b) / 2;
+      Vector3D axis = a - b;
+      axis.normalize();
+      double dist = (a - b).norm2();
+      cs[l * 10 + i] = Cylinder(center, axis, 0.01, dist, 0.5);
+    }
+
+
+    // for (int i = 0; i < 1; i++) {
+    //   int idx = i + 8;
+    //   pms[8].position = pms[2].position + CGL::Vector3D(0, 0, 0.1);
+    // }
+
   }
 }
 
@@ -232,7 +268,8 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
     if (overage > 0) {
         Vector3D correction1 = overage * delta21.unit();
         Vector3D correction2 = overage * delta12.unit();
-
+    }
+  }
   //       if (!pm1->pinned && !pm2->pinned) {
   //           pm1->position += correction1 / 2;
   //           pm2->position += correction2 / 2;
