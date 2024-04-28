@@ -304,6 +304,10 @@ void ClothSimulator::drawContents() {
     shader.setUniform("u_color", color, false);
     // drawWireframe(shader);
     drawBeestWireframe(shader);
+    for(auto leg: cloth->beest.cs) {
+        leg.render(shader);
+        // cout << "Leg renderedred";
+      }
     break;
   case NORMALS:
     drawNormals(shader);

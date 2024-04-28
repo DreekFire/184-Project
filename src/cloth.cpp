@@ -45,14 +45,13 @@ void Beest::buildBeest() {
     ss.push_back(Spring(&(pms[idx + 5]), &pms[idx + 6], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 5]), &pms[idx + 7], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 6]), &pms[idx + 7], STRUCTURAL));
-    vector<vector<int>> connections{{1, 2}, {2, 3}, {2, 6}, {0, 3}, {0, 4}, {4, 5}, {0, 6}, {5, 6}, {5, 7}, {6, 7}};
+    vector<vector<int>> connections{{1, 2}, {2, 3}, {2, 6}, {0, 3}, {0, 4}, {3, 4}, {4, 5}, {0, 6}, {5, 6}, {5, 7}, {6, 7}};
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 11; i++) {
       Vector3D a = pms[connections[i][0]].position;
       Vector3D b = pms[connections[i][1]].position;
       Vector3D center = (a + b) / 2;
       Vector3D axis = a - b;
-      axis.normalize();
       double dist = (a - b).norm2();
       cs.push_back(Cylinder(center, axis, 0.1, dist, 0.5));
     }
@@ -69,15 +68,14 @@ void Beest::simulate(float dt) {
     for (int i = 0; i < 8; i++) {
       pms[idx + i].position = CGL::Vector3D(pv.first[i].x * 0.01, pv.first[i].y * 0.01, l);
     }
+    vector<vector<int>> connections{{1, 2}, {2, 3}, {2, 6}, {0, 3}, {0, 4}, {3, 4}, {4, 5}, {0, 6}, {5, 6}, {5, 7}, {6, 7}};
 
-    vector<vector<int>> connections{{1, 2}, {2, 3}, {2, 6}, {0, 3}, {0, 4}, {4, 5}, {0, 6}, {5, 6}, {5, 7}, {6, 7}};
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 11; i++) {
       Vector3D a = pms[connections[i][0]].position;
       Vector3D b = pms[connections[i][1]].position;
       Vector3D center = (a + b) / 2;
       Vector3D axis = a - b;
-      axis.normalize();
       double dist = (a - b).norm2();
       cs[l * 10 + i] = Cylinder(center, axis, 0.01, dist, 0.5);
     }
