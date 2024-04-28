@@ -24,6 +24,10 @@ const std::vector<std::vector<int>> Jansen::resolutionOrder = {
 };
 
 Jansen::Jansen() {
+  reset();
+}
+
+void Jansen::reset() {
   q.fill(0);
   qdot.fill(1);
   translation.setZero();
@@ -56,8 +60,6 @@ void Jansen::resolve(double dt) {
     int idxR = resolutionOrder[i][0];
     int idx1 = resolutionOrder[i][1];
     int idx2 = resolutionOrder[i][2];
-    // printf("intersecting %d, %d to produce point %d\n", idx1, idx2, idxR);
-    // std::cout << "p1: " << position[idx1] << " p2: " << position[idx2] << " r1: " << linkLengths[i][0] << " r2: " << linkLengths[i][1] << std::endl;
     Eigen::Vector3f s = intersectPointDistances(
       pos.col(idx2) - pos.col(idx1),
       linkLengths[i][0], linkLengths[i][1],
@@ -66,8 +68,6 @@ void Jansen::resolve(double dt) {
 
     pos.col(idxR) = s + pos.col(idx1);
 
-    // printf("intersecting %d, %d to produce point %d\n", idx1, idx2, idxR);
-    // std::cout << "p1: " << position[idx1] << " p2: " << position[idx2] << " r1: " << linkLengths[i][0] << " r2: " << linkLengths[i][1] << std::endl;
     Eigen::Matrix<float, 3, nCoords> vels = intersectPointVelocities(
       pos.col(idx2) - pos.col(idx1),
       dpdq.middleRows<3>(3 * idx2) - dpdq.middleRows<3>(3 * idx1),
@@ -87,15 +87,7 @@ void Jansen::resolve(double dt) {
     );
 
     ddtdpdq.middleRows<3>(3 * idxR) = accels + ddtdpdq.middleRows<3>(3 * idx1);
-    
-    /*if (pos.maxCoeff() > 100 || dpdq.maxCoeff() > 100 || ddtdpdq.maxCoeff() > 200) {
-      std::cout << "uh oh" << std::endl;
-    }*/
   }
-  Eigen::Matrix<float, 3 * nPoints, nCoords> dpdqDiff = dpdq - lastDpDq;
-  // std::cout << "accel diff: " << dpdqDiff - ddtdpdq / (90 * 30) << std::endl;
-  Eigen::Matrix<float, 3 * nPoints, 1> pDiff = p - pLast;
-  // std::cout << "vel diff: " << pDiff - (dpdq * qdot / (90 * 30)) << std::endl;
   if (pos.hasNaN() || dpdq.hasNaN() || ddtdpdq.hasNaN()) {
     std::cout << "NaNi!?" << std::endl;
   }
@@ -111,38 +103,6 @@ void Jansen::resolve(double dt) {
 
   // fast inverse for PD matrices, doesn't really matter since it's just 3x3 but it feels cool
   inverseMoment = moment.llt().solve(Eigen::Matrix3f::Identity());
-
-        /*dpdq[idxR] = intersectPointVelocities(
-            pos[idx2] - pos[idx1],
-            { dpdq[idx2][0] - dpdq[idx1][0] },
-            p
-        );
-        CGL::Vector2D vel(0, 0);
-        for (int i = 0; i < dpdq[idxR].size(); i++) {
-            vel += (dpdq[idx2][i] - dpdq[idx1][i]) * qdot[i];
-        }
-        ddtdpdq[idxR] = intersectPointAccelerations(
-            pos[idx2] - pos[idx1],
-            vel,
-            { ddtdpdq[idx2][0] - ddtdpdq[idx1][0] },
-            p
-        );*/
-        // { velocity[idx2][0] - velocity[idx1][0] },
-        // pos.col(idxR) = s + pos.col(idx1);
-        /*for (int i = 0; i < qdot.size(); i++) {
-            dpdq[idxR][i] += dpdq[idx1][i];
-            ddtdpdq[idxR][i] += ddtdpdq[idx1][i];
-        }*/
-        // std::cout << position[idxR] << std::endl;
-    // }
-    /*CGL::Vector2D com = CGL::Vector2D(0, 0);
-    for (CGL::Vector2D& p : pos) {
-        com += p;
-    }
-    com /= pos.size();
-    for (CGL::Vector2D& p : pos) {
-        p -= com;
-    }*/
 }
 
 void Jansen::solveCollisions(const std::vector<CGL::Vector3D>& forces, const std::vector<float>& depths, const std::vector<int>& idxs, double dt) {
@@ -228,8 +188,6 @@ void Jansen::step(const std::vector<CGL::Vector3D>& forces, const std::vector<in
     
     Eigen::Matrix<float, nCoords, nCoords> coriolis = ddtdpdq.transpose() * dpdq;
     coriolis += coriolis.transpose();
-    // coriolis.setZero();
-    // std::cout << "cor: " << coriolis << std::endl;
 
     // centrifugal force = -m w x (w x r)
     // coriolis force = -2m w x v
@@ -274,14 +232,12 @@ void Jansen::simulate(double frames_per_sec, double simulation_steps,
 
   CGL::Vector3D total_external_acceleration(0);
   std::vector<CGL::Vector3D> total_forces(nPoints, CGL::Vector3D(0));
-  /*for (const CGL::Vector3D& a : external_accelerations) {
+  for (const CGL::Vector3D& a : external_accelerations) {
     total_external_acceleration += a;
   }
   for (CGL::Vector3D& f : total_forces) {
     f += total_external_acceleration;
-  }*/
-  // total_forces[1] += Vector3D(0, 1, 0);
-  // total_forces[2] += Vector3D(0, -1, 0);
+  }
   std::vector<int> idxs;
   idxs.reserve(nPoints);
   for (int i = 0; i < nPoints; i++) {

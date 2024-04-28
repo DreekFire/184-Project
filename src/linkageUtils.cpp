@@ -25,10 +25,6 @@ Eigen::Matrix<float, 3, -1> intersectPointVelocities(const Eigen::Vector3f& p, c
     vels.col(i) = pRNorm.cross(dp.col(i)).cross(s);
   }
 
-  if (vels.maxCoeff() > 100 || vels.minCoeff() < -100) {
-    std::cout << "uh oh" << std::endl;
-  }
-
   return vels;
 }
 
@@ -40,15 +36,8 @@ Eigen::Matrix<float, 3, -1> intersectPointAccelerations(const Eigen::Vector3f& p
   cAccel.resize(3, dp.cols());
   Eigen::Vector3f pRNorm = p / p.squaredNorm();
   for (int i = 0; i < dp.cols(); i++) {
-    // product rule works with cross product too
-    // d/dt = (pRNorm x dp_i) x s = (d/dt pRNorm x dp_i) x s + (pRNorm x d/dt dp_i) x s + (pRNorm x dp_i) x d/dt s
-    // d/dt pRNorm is parallel to dp_i because they both travel along a circle
-    // = qAccel + pRNorm x dp_i x vR
-    // cAccel.col(i) = pRNorm.cross(dp.col(i)).cross(v);
     cAccel.col(i) = w.cross(dp.col(i));
   }
-  // std::cout << cAccel.transpose() * dp << std::endl;
-  // return cAccel;
 
   return intersectPointVelocities(p, ddtdp, s) + cAccel;
 

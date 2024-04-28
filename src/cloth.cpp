@@ -323,6 +323,9 @@ void Cloth::reset() {
     pm->last_position = pm->start_position;
     pm++;
   }
+  for (Jansen& j : beest.legModels) {
+    j.reset();
+  }
 }
 
 void Cloth::buildClothMesh() {
