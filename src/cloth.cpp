@@ -10,8 +10,6 @@
 
 #include "CGL/vector2D.h"
 
-#include "internal_coords/jansen.h"
-
 using namespace std;
 
 Beest::Beest(int numLegs) : numLegs(numLegs), q(0) {}
@@ -19,17 +17,29 @@ Beest::Beest(int numLegs) : numLegs(numLegs), q(0) {}
 Beest::~Beest() {
   pms.clear();
   ss.clear();
+  legModels.clear();
 }
 
 void Beest::buildBeest() {
-  for (int i = 0; i < 8 * numLegs; i++) {
+  for (int i = 0; i < Jansen::nPoints * numLegs; i++) {
     pms.push_back(PointMass(Vector3D(0), false));
   }
 
-  simulate(0);
+  for (int i = 0; i < numLegs; i++) {
+    legModels.push_back(Jansen());
+  }
 
   for (int l = 0; l < numLegs; l++) {
-    int idx = 0; // l * 8;
+    int idx = l * Jansen::nPoints;
+    std::vector<CGL::Vector3D> positions = legModels[l].positions();
+    for (int i = 0; i < Jansen::nPoints; i++) {
+      pms[idx + i].position = 0.1 * positions[i];
+      pms[idx + i].position.z += l;
+    }
+  }
+
+  for (int l = 0; l < numLegs; l++) {
+    int idx = l * Jansen::nPoints;
     ss.push_back(Spring(&(pms[idx + 1]), &pms[idx + 2], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 2]), &pms[idx + 3], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 2]), &pms[idx + 6], STRUCTURAL));
@@ -44,13 +54,17 @@ void Beest::buildBeest() {
   }
 }
 
-void Beest::simulate(float dt) {
-  q += dt;
+void Beest::simulate(double frames_per_sec, double simulation_steps,
+  vector<Vector3D> external_accelerations,
+  vector<CollisionObject*>* collision_objects) {
   for (int l = 0; l < numLegs; l++) {
-    int idx = l * 8;
-    std::pair<std::vector<CGL::Vector2D>, std::vector<std::vector<CGL::Vector2D>>> pv = Jansen::resolve({q});
-    for (int i = 0; i < 8; i++) {
-      pms[idx + i].position = CGL::Vector3D(pv.first[i].x * 0.01, pv.first[i].y * 0.01, l);
+    int idx = l * Jansen::nPoints;
+    legModels[l].simulate(frames_per_sec, simulation_steps,
+      external_accelerations, collision_objects);
+    std::vector<CGL::Vector3D> positions = legModels[l].positions();
+    for (int i = 0; i < Jansen::nPoints; i++) {
+      pms[idx + i].position = 0.1 * positions[i];
+      pms[idx + i].position.z += l;
     }
   }
 }
@@ -139,7 +153,8 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
                      vector<Vector3D> external_accelerations,
                      vector<CollisionObject *> *collision_objects) {
   // std::cout << beest.point_masses.size() << std::endl;
-  beest.simulate(1.0f / (frames_per_sec * simulation_steps));
+  beest.simulate(frames_per_sec, simulation_steps,
+    external_accelerations, collision_objects);
   // for (int i = 0; i < beest.point_masses.size(); i++) {
   //   std::cout << beest.point_masses[i].position << std::endl;
   // }
@@ -202,19 +217,10 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
 
 
   // TODO (Part 3): Handle collisions with other primitives.
-  for (int i = 0; i < point_masses.size(); i++) {
-    for (int j = 0; j < collision_objects->size(); j++) {
-      if (dynamic_cast<Sphere *>((*collision_objects)[j])) {
-        Sphere *sphere = dynamic_cast<Sphere *>((*collision_objects)[j]);
-        sphere->collide(point_masses[i]);
-      }
-	  else if (dynamic_cast<Dune *>((*collision_objects)[j])) {
-		Dune *dune = dynamic_cast<Dune *>((*collision_objects)[j]);
-		dune->collide(point_masses[i]);
-	  } 
-      else if (dynamic_cast<Plane *>((*collision_objects)[j])) {
-        Plane *plane = dynamic_cast<Plane *>((*collision_objects)[j]);
-        plane->collide(point_masses[i]);
+  for (PointMass& pm : point_masses) {
+    if (!pm.pinned) {
+      for (CollisionObject* co : *collision_objects) {
+        co->collide(pm);
       }
     }
   }
@@ -223,7 +229,7 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
   // TODO (Part 2): Constrain the changes to be such that the spring does not change
   // in length more than 10% per timestep [Provot 1995].
   for (auto& spring : springs) {
-	PointMass *pm1 = spring.pm_a;
+	  PointMass *pm1 = spring.pm_a;
     PointMass *pm2 = spring.pm_b;
     Vector3D delta21 = pm2->position - pm1->position;
     Vector3D delta12 = pm1->position - pm2->position;
@@ -233,19 +239,18 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
         Vector3D correction1 = overage * delta21.unit();
         Vector3D correction2 = overage * delta12.unit();
 
-  //       if (!pm1->pinned && !pm2->pinned) {
-  //           pm1->position += correction1 / 2;
-  //           pm2->position += correction2 / 2;
-  //       }
-  //       else if (!pm1->pinned) {
-	// 		pm1->position += correction1;
-  //       }
-  //       else if (!pm2->pinned) {
-	// 		pm2->position += correction2;
-	// 	}
-	// }
-  // }
-
+    //       if (!pm1->pinned && !pm2->pinned) {
+    //           pm1->position += correction1 / 2;
+    //           pm2->position += correction2 / 2;
+    //       }
+    //       else if (!pm1->pinned) {
+	  // 		pm1->position += correction1;
+    //       }
+    //       else if (!pm2->pinned) {
+	  // 		pm2->position += correction2;
+	  // 	}
+	  }
+  }
 }
 
 void Cloth::build_spatial_map() {

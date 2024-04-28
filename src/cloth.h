@@ -11,6 +11,8 @@
 #include "collision/collisionObject.h"
 #include "spring.h"
 
+#include "internal_coords/jansen.h"
+
 using namespace CGL;
 using namespace std;
 
@@ -47,12 +49,15 @@ struct Beest {
   ~Beest();
 
   void buildBeest();
-  void simulate(float t);
+  void simulate(double frames_per_sec, double simulation_steps,
+    vector<Vector3D> external_accelerations,
+    vector<CollisionObject*>* collision_objects);
 
   int numLegs;
   float q;
   vector<PointMass> pms;
   vector<Spring> ss;
+  vector<Jansen> legModels;
 };
 
 struct Cloth {
