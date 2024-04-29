@@ -12,6 +12,8 @@
 #include "spring.h"
 
 #include "collision/cylinder.h"
+#include "collision/sphere.h"
+
 
 
 using namespace CGL;
@@ -57,6 +59,7 @@ struct Beest {
   vector<PointMass> pms;
   vector<Spring> ss;
   vector<Cylinder> cs;
+  vector<Sphere> spheres;
 };
 
 struct Cloth {

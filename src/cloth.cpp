@@ -29,6 +29,7 @@ void Beest::addTube() {
 void Beest::buildBeest() {
   for (int i = 0; i < 8 * numLegs; i++) {
     pms.push_back(PointMass(Vector3D(0), false));
+    spheres.push_back(Sphere(Vector3D(0), 0.02, 0));
   }
 
 
@@ -45,16 +46,15 @@ void Beest::buildBeest() {
     ss.push_back(Spring(&(pms[idx + 5]), &pms[idx + 6], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 5]), &pms[idx + 7], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 6]), &pms[idx + 7], STRUCTURAL));
-    vector<vector<int>> connections{{1, 2}, {2, 3}, {2, 6}, {0, 3}, {0, 4}, {3, 4}, {4, 5}, {0, 6}, {5, 6}, {5, 7}, {6, 7}};
-
-    for (int i = 0; i < 11; i++) {
-      Vector3D a = pms[connections[i][0]].position;
-      Vector3D b = pms[connections[i][1]].position;
-      Vector3D center = (a + b) / 2;
-      Vector3D axis = a - b;
-      double dist = (a - b).norm2();
-      cs.push_back(Cylinder(center, axis, 0.1, dist, 0.5));
-    }
+  }
+  cs.clear();
+  for (auto spring:ss) {
+    Vector3D a = spring.pm_a->position;
+    Vector3D b = spring.pm_b->position;
+    Vector3D center = (a + b) / 2;
+    Vector3D axis = a - b;
+    double dist = (a - b).norm()/2;
+    cs.push_back(Cylinder(center, axis, 0.01, dist, 0.5));
   }
   simulate(0);
 
@@ -66,26 +66,19 @@ void Beest::simulate(float dt) {
     int idx = l * 8;
     std::pair<std::vector<CGL::Vector2D>, std::vector<std::vector<CGL::Vector2D>>> pv = Jansen::resolve({q});
     for (int i = 0; i < 8; i++) {
-      pms[idx + i].position = CGL::Vector3D(pv.first[i].x * 0.01, pv.first[i].y * 0.01, l);
+      pms[idx + i].position =
+          CGL::Vector3D(pv.first[i].x * 0.01, pv.first[i].y * 0.01, l);
+      spheres[idx + i] = Sphere(pms[idx + i].position, 0.02, 0);
     }
-    vector<vector<int>> connections{{1, 2}, {2, 3}, {2, 6}, {0, 3}, {0, 4}, {3, 4}, {4, 5}, {0, 6}, {5, 6}, {5, 7}, {6, 7}};
-
-
-    for (int i = 0; i < 11; i++) {
-      Vector3D a = pms[connections[i][0]].position;
-      Vector3D b = pms[connections[i][1]].position;
+  }
+  cs.clear();
+  for (auto spring:ss) {
+      Vector3D a = spring.pm_a->position;
+      Vector3D b = spring.pm_b->position;
       Vector3D center = (a + b) / 2;
       Vector3D axis = a - b;
-      double dist = (a - b).norm2();
-      cs[l * 10 + i] = Cylinder(center, axis, 0.01, dist, 0.5);
-    }
-
-
-    // for (int i = 0; i < 1; i++) {
-    //   int idx = i + 8;
-    //   pms[8].position = pms[2].position + CGL::Vector3D(0, 0, 0.1);
-    // }
-
+      double dist = (a - b).norm()/2;
+      cs.push_back(Cylinder(center, axis, 0.01, dist, 0.5));
   }
 }
 
@@ -210,7 +203,7 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
 	// 	  double overage = dist - spring.rest_length;
   //         Vector3D force = cp->ks * overage * delta21.unit();
   //         if (s_type == BENDING) {
-  //             force *= 0.2;
+  //             force *= 0.02;
   //         }
   //         spring.pm_a->forces += force;
   //         spring.pm_b->forces -= force;

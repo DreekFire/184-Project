@@ -294,6 +294,9 @@ void ClothSimulator::drawContents() {
         leg.render(shader);
         // cout << "Leg renderedred";
       }
+      for (auto sphere : cloth->beest.spheres) {
+        sphere.render(shader);
+      }
     }
   }
 
@@ -307,7 +310,10 @@ void ClothSimulator::drawContents() {
     for(auto leg: cloth->beest.cs) {
         leg.render(shader);
         // cout << "Leg renderedred";
-      }
+    }
+    for (auto sphere : cloth->beest.spheres) {
+        sphere.render(shader);
+    }
     break;
   case NORMALS:
     drawNormals(shader);
