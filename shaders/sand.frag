@@ -149,13 +149,12 @@ void main() {
     float u = v_uv.x;
     float v = v_uv.y;
 
-    // scale these to allow tiling of the texture
-    u *= 20.0; // Change the tiling factor as needed for your scene
-    v *= 20.0; // Change the tiling factor as needed for your scene
-
-    // Adjust UV coordinates for tiling
-    u = mod(u, 1.0);
-    v = mod(v, 1.0);
+    // Adjust UV coordinates for tiling and ripple effect
+    float rippleScale = 0.05; // Adjust ripple scale as needed
+    u += rippleScale * ripple_noise(v_uv); // Perturb u coordinate with ripple noise
+    v += rippleScale * ripple_noise(v_uv); // Perturb v coordinate with ripple noise
+    u = mod(u, 1.0); // Apply tiling
+    v = mod(v, 1.0); // Apply tiling
 
     // grab scaling values
     float normal_scaling = u_normal_scaling;
@@ -168,13 +167,8 @@ void main() {
     // local space normal 
     vec3 local_normal = vec3(-dU, -dV, 1.0);
 
-    // use the ripple noise function to perturb the normals
-    vec2 uv = vec2(u, v); // Use modified UV coordinates
-    float noiseValue = ripple_noise(uv); // Compute ripple noise
-    local_normal = vec3(noiseValue, noiseValue, noiseValue) * 0.50; // Perturb normals with ripple noise
-
     // use the sparkle function to determine if a sparkle should appear and adjust the normal accordingly
-    vec3 sparkle = calculateSparkle(uv) * 0.1; // Adjust sparkle intensity
+    vec3 sparkle = calculateSparkle(vec2(u, v)) * 0.1; // Adjust sparkle intensity
     local_normal += sparkle; // Add sparkle perturbation to the normal
 
     // calculate displaced normal
@@ -218,3 +212,4 @@ void main() {
     out_color = phong_color;
     out_color.a = 1.0;
 }
+

@@ -19,8 +19,10 @@ namespace CGL {
 		private:
 			std::vector<unsigned int> Indices;
 			std::vector<double> Vertices;
+			std::vector<double> TexCoords;
 			MatrixXf positions;
 			MatrixXf normals;
+			MatrixXf texcoords;
 
 			void build_data();
 			void generate_cube();
