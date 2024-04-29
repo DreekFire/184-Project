@@ -21,7 +21,7 @@ public:
    * Draws a cylinder with the given position, radius, and height in opengl, using the
    * current modelview/projection matrices and color/material settings.
    */
-  void draw_cylinder(GLShader &shader, const Vector3D &p, double r, double h);
+  void draw_cylinder(GLShader &shader, const Vector3D &axis, const Vector3D &p, double r, double h);
   
 private:
   std::vector<unsigned int> Indices;
