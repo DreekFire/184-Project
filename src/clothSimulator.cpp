@@ -355,6 +355,7 @@ void ClothSimulator::drawContents() {
               sandShader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
               sandShader.setUniform("u_texture_4_size", Vector2f(m_gl_texture_4_size.x, m_gl_texture_4_size.y), false);
               sandShader.setUniform("u_ripples_size", Vector2f(m_gl_ripples_size.x, m_gl_ripples_size.y), false);
+              sandShader.setUniform("u_view_projection", viewProjection);
               // Textures
               sandShader.setUniform("u_texture_1", 1, false);
               sandShader.setUniform("u_texture_2", 2, false);
