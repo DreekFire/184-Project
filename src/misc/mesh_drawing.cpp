@@ -237,8 +237,9 @@ namespace CGL {
                 // add adjustment factor to keep the point mass on the surface
                 pm.position.y = closest_point.y + 0.001;
                 
-            }
+            } 
         }
+
 
         void MeshDrawing::drawMesh(GLShader& shader, const Vector3D& position, float scale) {
             Matrix4f model;
