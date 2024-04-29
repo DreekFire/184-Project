@@ -454,6 +454,17 @@ void ClothSimulator::drawBeestWireframe(GLShader &shader) {
   //shader.uploadAttrib("in_normal", normals);
 
   shader.drawArray(GL_LINES, 0, num_springs * 2);
+  
+  Eigen::Matrix<float, 4, 2> ground_positions;
+  ground_positions.col(0) << -10, 0, 0, 1.0;
+  ground_positions.col(1) << 10, 0, 0, 1.0;
+
+  //shader.setUniform("u_color", nanogui::Color(1.0f, 1.0f, 1.0f, 1.0f), false);
+  shader.uploadAttrib("in_position", ground_positions, false);
+  // Commented out: the wireframe shader does not have this attribute
+  //shader.uploadAttrib("in_normal", normals);
+
+  shader.drawArray(GL_LINES, 0, 2);
 }
 
 void ClothSimulator::drawNormals(GLShader &shader) {

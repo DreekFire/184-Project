@@ -13,14 +13,27 @@ const std::vector<std::vector<float>> Jansen::linkLengths = {
     {3.93f, 6.19f},
     {3.94f, 3.67f},
     {6.57f, 4.90f},
+
+    {4.15f, 5.00f},
+    {4.01f, 5.58f},
+    {3.93f, 6.19f},
+    {3.94f, 3.67f},
+    {6.57f, 4.90f},
 };
 
+// 0 -> 2, 1 -> 0, 2 -> 1
 const std::vector<std::vector<int>> Jansen::resolutionOrder = {
-    {3, 0, 2, 1},
-    {4, 0, 3, 1},
-    {6, 0, 2, -1},
+    {3, 2, 1, 1},
+    {4, 2, 3, 1},
+    {6, 2, 1, -1},
     {5, 4, 6, -1},
     {7, 5, 6, -1},
+
+    {9, 8, 1, -1},
+    {10, 8, 9, -1},
+    {12, 8, 1, 1},
+    {11, 10, 12, 1},
+    {13, 11, 12, 1},
 };
 
 Jansen::Jansen() {
@@ -30,7 +43,7 @@ Jansen::Jansen() {
 void Jansen::reset() {
   q.fill(0);
   qdot.fill(1);
-  translation.setZero();
+  translation = Eigen::Vector3f(0, 10, 0);
   velocity.setZero();
   rotation.setIdentity();
 
@@ -43,17 +56,18 @@ void Jansen::reset() {
 void Jansen::resolve(double dt) {
   Eigen::Matrix<float, 3, nPoints> pos;
   pos.setZero();
-  pos.col(1) = Eigen::Vector3f(3.8, 0.782, 0);
-  pos.col(2) = pos.col(1) + Eigen::Vector3f(1.5 * cosf(q(0)), 1.5 * sinf(q(0)), 0);
+  pos.col(1) = Eigen::Vector3f(1.5 * cosf(q(0)), 1.5 * sinf(q(0)), 0);
+  pos.col(2) = Eigen::Vector3f(-3.8, -0.782, 0);
+  pos.col(8) = Eigen::Vector3f(3.8, -0.782, 0);
 
   v.setZero();
 
   Eigen::Matrix<float, 3 * nPoints, nCoords> lastDpDq = dpdq;
   dpdq.setZero();
-  dpdq.middleRows<3>(6) = Eigen::Vector3f(-1.5 * sinf(q(0)), 1.5 * cosf(q(0)), 0);
+  dpdq.middleRows<3>(3) = Eigen::Vector3f(-1.5 * sinf(q(0)), 1.5 * cosf(q(0)), 0);
 
   ddtdpdq.setZero();
-  ddtdpdq.middleRows<3>(6) = Eigen::Vector3f(-1.5 * cosf(q(0)), -1.5 * sinf(q(0)), 0) * qdot(0);
+  ddtdpdq.middleRows<3>(3) = Eigen::Vector3f(-1.5 * cosf(q(0)), -1.5 * sinf(q(0)), 0) * qdot(0);
 
   // coordinates are [t, r, theta]: global translation, global rotation (axis-magnitude-angle), crankshaft angle
   for (int i = 0; i < resolutionOrder.size(); i++) {
@@ -94,11 +108,11 @@ void Jansen::resolve(double dt) {
   pos = pos.colwise() - pos.rowwise().sum() / nPoints;
   p = pos.reshaped(3 * nPoints, 1);
 
-  Eigen::Vector3f torque(0, 0, 0);
+  Eigen::Vector3f dL(0, 0, 0);
   for (int i = 0; i < nPoints; i++) {
-    torque += pos.col(i).cross(v.middleRows<3>(3 * i) - vLast.middleRows<3>(3 * i));
+    dL += pos.col(i).cross(v.middleRows<3>(3 * i) - vLast.middleRows<3>(3 * i));
   }
-  angularMomentum -= torque * dt;
+  angularMomentum -= dL;
   Eigen::Matrix3f moment = pos.squaredNorm() * Eigen::Matrix3f::Identity() - pos * pos.transpose();
 
   // fast inverse for PD matrices, doesn't really matter since it's just 3x3 but it feels cool
@@ -106,64 +120,114 @@ void Jansen::resolve(double dt) {
 }
 
 void Jansen::solveCollisions(const std::vector<CGL::Vector3D>& forces, const std::vector<float>& depths, const std::vector<int>& idxs, double dt) {
-    // get force response
-    Eigen::ColPivHouseholderQR<Eigen::Matrix<float, 3 * nPoints, nCoords>> qr(dpdq);
-    Eigen::Matrix<float, 3 * nPoints, nCoords> Q = qr.householderQ().setLength(nCoords) * Eigen::Matrix<float, 3 * nPoints, nCoords>::Identity();
-    // nForces x nCoords
-    Eigen::Matrix<float, Eigen::Dynamic, nCoords> qResponses = Eigen::Matrix<float, Eigen::Dynamic, nCoords>::Zero(forces.size(), nPoints);
-    // nForces x 3*nPoints
-    Eigen::Matrix<float, Eigen::Dynamic, 3 * nPoints> responses = Eigen::Matrix<float, Eigen::Dynamic, 3 * nPoints>::Zero(forces.size(), nPoints);
-    int rank = qr.rank();
-    for (int i = 0; i < forces.size(); i++) {
-        qResponses.col(i) = Q.middleRows<3>(3 * idxs[i]).transpose() * convertVector(forces[i]); // currently actually R * qResponses
-        responses.col(i) = Q * qResponses.col(i);
-        qResponses.col(i) = qr.matrixR().triangularView<Eigen::Upper>().solve(qResponses.col(i)); // calculate R^{-1} * qResponses, still faster than fully multiplying out dpdqs
+  /*// get force response
+  // response is force projected onto columns of dpdq, but we handle extrinsic translation/rotation separately so we need to add that back.
+  Eigen::Matrix<float, 3 * nPoints, 3> tResponse;
+  Eigen::Matrix<float, 3 * nPoints, 3> rResponse;
+  int nForces = forces.size();
+  for (int i = 0; i < nPoints; i++) {
+    tResponse.middleRows<3>(3 * i) = Eigen::Matrix3f::Identity();
+    rResponse.middleRows<3>(3 * i) = -skewMat(p.middleRows<3>(3 * i));
+  }
+  Eigen::Matrix<float, 3 * nPoints, nCoords + 6> space;
+  space << tResponse, rResponse, dpdq;
+  Eigen::ColPivHouseholderQR<Eigen::Matrix<float, 3 * nPoints, nCoords + 6>> qr(space);
+  Eigen::Matrix<float, 3 * nPoints, nCoords + 6> Q = qr.householderQ().setLength(nCoords + 6) * Eigen::Matrix<float, 3 * nPoints, nCoords + 6>::Identity();
+  // nCoords+6 x nForces
+  Eigen::Matrix<float, nCoords + 6, -1> qResponses;
+  qResponses.setZero(nCoords + 6, nForces);
+  // 3*nPoints x nForces
+  Eigen::Matrix<float, 3 * nPoints, -1> responses;
+  responses.setZero(3 * nPoints, nForces);
+  int rank = qr.rank();
+  for (int i = 0; i < nForces; i++) {
+    qResponses.col(i) = Q.middleRows<3>(3 * idxs[i]).transpose() * convertVector(forces[i]); // currently actually R * qResponses
+    responses.col(i) = Q * qResponses.col(i);
+    // calculate R^{-1} * qResponses, still faster than fully multiplying out dpdqs
+    qResponses.col(i) = qr.matrixR().topLeftCorner(nCoords + 6, nCoords + 6).triangularView<Eigen::Upper>().solve(qResponses.col(i));
+  }*/
+
+  // get force response
+  // response is force projected onto columns of dpdq, but we handle extrinsic translation/rotation separately so we need to add that back.
+  int nForces = forces.size();
+  Eigen::Matrix<float, 3, -1> f = convertVectors(forces).reshaped(3, nForces);
+  Eigen::Matrix<float, 3, -1> rResponse;
+  rResponse.resize(3, nForces);
+
+  for (int i = 0; i < nForces; i++) {
+    rResponse.col(i) = p.middleRows<3>(3 * idxs[i]).cross(f.col(i));
+  }
+
+  Eigen::Matrix<float, 3, -1> wResponse = inverseMoment * rResponse;
+  
+  // q response is pseudoinverse(dpdq) * forces, p response is dpdq * pseudoinverse(dpdq) * forces, which is the projection onto the columns of dpdq
+  // nCoords x 1 = (nCoords x nCoords)^-1 * nCoords x 3 * 3 x 1
+  Eigen::Matrix<float, nCoords, -1> qResponses;
+  qResponses.resize(nCoords, nForces);
+  for (int i = 0; i < nForces; i++) {
+    qResponses.col(i) = (dpdq.transpose() * dpdq).llt().solve(
+      dpdq.middleRows<3>(3 * idxs[i]).transpose()
+      * f.col(i));
+  }
+  // we want response[i].dot(forces[i])
+  // (i, j) is the contribution to constrainti from force j
+  Eigen::MatrixXf jacobian = Eigen::MatrixXf::Identity(nForces, nForces);
+  for (int i = 0; i < nForces; i++) {
+    jacobian.row(i) += f.col(i).transpose() * dpdq.middleRows<3>(3 * idxs[i]) * qResponses; // 1 x 3 * 3 x nCoords * nCoords x nForces
+  }
+
+  jacobian += f.transpose() * f / (nPoints * nPoints);
+  for (int i = 0; i < nForces; i++) {
+    for (int j = 0; j < nForces; j++) {
+      jacobian(i, j) += wResponse.col(j).cross(p.middleRows<3>(3 * idxs[i])).dot(f.col(i));
     }
+  }
 
-    // return responses;
-    // offsets are 3 x nForces
-    // multiply offs
+  jacobian *= dt * dt;
 
-    int nForces = forces.size();
-    Eigen::MatrixXf jacobian = Eigen::MatrixXf::Zero(nForces, nForces);
+  // return responses;
 
-    // dsigma/dlambda = response * grad * dt^2
+  /*Eigen::MatrixXf jacobian;
+  jacobian.setZero(nForces, nForces);
+  // dsigma/dlambda = response * grad * dt^2
 
-    for (int i = 0; i < nForces; i++) {
-        for (int j = 0; j < nForces; j++) {
-            // how much force i contributes to constraint j
-            int cIdx = idxs[j];
-            jacobian(i, j) = (dot(convertVector(responses(i, Eigen::seqN(3 * cIdx, 3))), forces[j])) * dt * dt;
-        }
-    }
+  for (int i = 0; i < nForces; i++) {
+      for (int j = 0; j < nForces; j++) {
+          // how much force i contributes to constraint j
+          int cIdx = idxs[j];
+          jacobian(i, j) = responses.block<3, 1>(3 * cIdx, i).dot(convertVector(forces[j])) * dt * dt;
+      }
+  }*/
 
-    Eigen::VectorXf sigma;
-    sigma.resize(depths.size());
-    for (int i = 0; i < depths.size(); i++) {
-      sigma(i) = depths[i];
-    }
-    Eigen::VectorXf lambda = -jacobian.colPivHouseholderQr().solve(sigma);
+  Eigen::VectorXf sigma;
+  sigma.resize(nForces);
+  for (int i = 0; i < nForces; i++) {
+    sigma(i) = depths[i];
+  }
+  Eigen::VectorXf lambda = jacobian.colPivHouseholderQr().solve(sigma);
 
-    Eigen::Matrix<float, nCoords, 1> qAccel = qResponses.transpose() * lambda;
-    qdot += qAccel * dt;
-    q += qAccel * dt * dt;
+  Eigen::Matrix<float, nCoords, 1> qAccel = qResponses * lambda;
+  qdot += qAccel * dt;
+  q += qAccel * dt * dt;
 
-    Eigen::Matrix<float, 3, -1> f = convertVectors(forces).reshaped(3, nPoints) * lambda;
-    Eigen::Vector3f globalForce = f.rowwise().sum();
+  for (int i = 0; i < nForces; i++) {
+    f.col(i) *= lambda(i);
+  }
+  Eigen::Vector3f globalForce = f.rowwise().sum();
 
-    Eigen::Vector3f torque = Eigen::Vector3f::Zero();
-    for (int i = 0; i < forces.size(); i++) {
-      torque += p.middleRows<3>(3 * i).cross(f.col(i));
-    }
+  Eigen::Vector3f torque = Eigen::Vector3f::Zero();
+  for (int i = 0; i < nForces; i++) {
+    torque += rResponse.col(i) * lambda(i);
+  }
 
-    Eigen::Vector3f dv = globalForce * dt / nPoints;
-    velocity += dv;
-    angularMomentum += torque * dt;
+  Eigen::Vector3f dv = globalForce * dt / nPoints;
+  velocity += dv;
+  angularMomentum += torque * dt;
 
-    resolve(dt);
+  resolve(dt);
 
-    rotation = rotationMat(inverseMoment * torque * dt * dt) * rotation;
-    translation += dv * dt;
+  rotation = rotationMat(inverseMoment * torque * dt * dt) * rotation;
+  translation += dv * dt;
 }
 
 void Jansen::step(const std::vector<CGL::Vector3D>& forces, const std::vector<int>& idxs, double dt) {
@@ -253,12 +317,21 @@ void Jansen::simulate(double frames_per_sec, double simulation_steps,
 
   // check for collisions
 
-  /*std::vector<CGL::Vector3D> collision_offsets;
+  std::vector<CGL::Vector3D> collision_offsets;
   std::vector<float> collision_depths;
   std::vector<int> collision_idxs;
   for (int i = 0; i < nPoints; i++) {
     CGL::Vector3D pos = this->position(i);
-    PointMass pm(pos, false);
+    // simple y-check just for testing
+    if (pos.y < 0) {
+      CGL::Vector3D diff = CGL::Vector3D(0, -pos.y, 0);
+      float d = diff.norm();
+      collision_depths.push_back(d);
+      collision_offsets.push_back(diff / d);
+      collision_idxs.push_back(i);
+    }
+
+    /*PointMass pm(pos, false);
     for (CollisionObject* co : *collision_objects) {
       pm.last_position = this->lastPosition(i);
       co->collide(pm);
@@ -269,10 +342,12 @@ void Jansen::simulate(double frames_per_sec, double simulation_steps,
       collision_depths.push_back(d);
       collision_offsets.push_back(diff / d);
       collision_idxs.push_back(i);
-    }
+    }*/
   }
 
-  this->solveCollisions(collision_offsets, collision_depths, collision_idxs, dt);*/
+  if (collision_depths.size() > 0) {
+    this->solveCollisions(collision_offsets, collision_depths, collision_idxs, dt);
+  }
 }
 
 std::vector<CGL::Vector3D> Jansen::positions() const {
@@ -284,9 +359,9 @@ std::vector<CGL::Vector3D> Jansen::lastPositions() const {
 }
 
 CGL::Vector3D Jansen::position(int i) const {
-  return convertVector(p.middleRows<3>(3 * i) + translation);
+  return convertVector(rotation * p.middleRows<3>(3 * i) + translation);
 }
 
 CGL::Vector3D Jansen::lastPosition(int i) const {
-  return convertVector(pLast.middleRows<3>(3 * i) + translation);
+  return convertVector(rotation * pLast.middleRows<3>(3 * i) + translation);
 }

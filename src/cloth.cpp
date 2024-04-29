@@ -40,17 +40,30 @@ void Beest::buildBeest() {
 
   for (int l = 0; l < numLegs; l++) {
     int idx = l * Jansen::nPoints;
-    ss.push_back(Spring(&(pms[idx + 1]), &pms[idx + 2], STRUCTURAL));
+    // todo: automate this
+    ss.push_back(Spring(&(pms[idx + 0]), &pms[idx + 1], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 1]), &pms[idx + 3], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 1]), &pms[idx + 6], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 2]), &pms[idx + 3], STRUCTURAL));
-    ss.push_back(Spring(&(pms[idx + 2]), &pms[idx + 6], STRUCTURAL));
-    ss.push_back(Spring(&(pms[idx]), &pms[idx + 3], STRUCTURAL));
-    ss.push_back(Spring(&(pms[idx]), &pms[idx + 4], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 2]), &pms[idx + 4], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 3]), &pms[idx + 4], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 4]), &pms[idx + 5], STRUCTURAL));
-    ss.push_back(Spring(&(pms[idx]), &pms[idx + 6], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 2]), &pms[idx + 6], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 5]), &pms[idx + 6], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 5]), &pms[idx + 7], STRUCTURAL));
     ss.push_back(Spring(&(pms[idx + 6]), &pms[idx + 7], STRUCTURAL));
+
+    ss.push_back(Spring(&(pms[idx + 0]), &pms[idx + 1], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 1]), &pms[idx + 9], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 1]), &pms[idx + 12], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 8]), &pms[idx + 9], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 8]), &pms[idx + 10], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 9]), &pms[idx + 10], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 10]), &pms[idx + 11], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 8]), &pms[idx + 12], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 11]), &pms[idx + 12], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 11]), &pms[idx + 13], STRUCTURAL));
+    ss.push_back(Spring(&(pms[idx + 12]), &pms[idx + 13], STRUCTURAL));
   }
 }
 

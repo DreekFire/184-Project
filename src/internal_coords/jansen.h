@@ -15,7 +15,7 @@ public:
 
   // only 1 coord because extrinsic translation and rotation are handled specially
   constexpr static int nCoords = 1;
-  constexpr static int nPoints = 8;
+  constexpr static int nPoints = 14;
   void reset();
   // convert internal coords q to cartesian coords and calculate derivatives
   void resolve(double dt);
