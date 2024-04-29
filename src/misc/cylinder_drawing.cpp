@@ -3,6 +3,7 @@
 
 #include "./cylinder_drawing.h"
 
+
 #include "CGL/color.h"
 #include "CGL/vector3D.h"
 
@@ -11,6 +12,7 @@
 #define VERTEX_OFFSET 5
 #define TANGEN_OFFSET 8
 #define VERTEX_SIZE 11
+
 
 using namespace nanogui;
 
@@ -139,10 +141,24 @@ void CylinderMesh::build_data() {
   }
 }
 
-void CylinderMesh::draw_cylinder(GLShader &shader, const Vector3D &p, double r, double h) {
+void CylinderMesh::draw_cylinder(GLShader &shader, const Vector3D &axis, const Vector3D &p, double r, double h) {
+    /*std::cout << "axis: " << axis << std::endl; */
+
+  Vector3D z_axis = axis.unit();
+  Vector3D x_axis = cross(Vector3D(0, 1, 0), z_axis).unit();
+  Vector3D y_axis = cross(z_axis, x_axis).unit();
+
+  /*std::cout << "x_axis: " << x_axis << std::endl;
+  std::cout << "y_axis: " << y_axis << std::endl;
+  std::cout << "z_axis: " << z_axis << std::endl; */
 
   Matrix4f model;
-  model << r, 0, 0, p.x, 0, h, 0, p.y, 0, 0, r, p.z, 0, 0, 0, 1;
+  model << r * x_axis.x, r * y_axis.x, r * z_axis.x, p.x,
+           r * x_axis.y, r * y_axis.y, r * z_axis.y, p.y,
+           r * x_axis.z, r * y_axis.z, r * z_axis.z, p.z,
+           0,             0,             0,             1;
+
+  std::cout << "Model Matrix:" << std::endl << model << std::endl;
 
   shader.setUniform("u_model", model);
 
@@ -159,6 +175,7 @@ void CylinderMesh::draw_cylinder(GLShader &shader, const Vector3D &p, double r, 
 
   shader.drawArray(GL_TRIANGLES, 0, cylinder_num_indices);
 }
+
 
 } // namespace Misc
 } // namespace CGL

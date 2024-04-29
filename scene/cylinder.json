@@ -1,8 +1,8 @@
 {
     "cylinder": {
-      "center": [0, 0, 0],
-      "axis": [0, 0, 1],
-      "radius": 1,
+      "center": [4, 4, 3],
+      "axis": [1, 2, 1],
+      "radius": 0.01,
       "height": 1,
       "friction": 0.5
     },

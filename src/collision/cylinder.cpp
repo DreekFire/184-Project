@@ -22,5 +22,5 @@ void Cylinder::collide(PointMass &pm) {
 }
 
 void Cylinder::render(GLShader &shader) {
-  m_cylinder_mesh.draw_cylinder(shader, origin, radius * 0.92, height);
+  m_cylinder_mesh.draw_cylinder(shader, origin, axis, radius * 0.92, height);
 }
