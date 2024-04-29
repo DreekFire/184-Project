@@ -142,8 +142,8 @@ void CylinderMesh::build_data() {
 }
 
 void CylinderMesh::draw_cylinder(GLShader &shader, const Vector3D &axis, const Vector3D &p, double r, double h) {
-    std::cout << "axis: " << axis << std::endl; 
-    std::cout << "position: " << p << std::endl; 
+    //std::cout << "axis: " << axis << std::endl; 
+    //std::cout << "position: " << p << std::endl; 
 
   Vector3D z_axis = axis.unit();
   Vector3D x_axis = cross(Vector3D(0, 1, 0), z_axis).unit();
@@ -159,10 +159,10 @@ void CylinderMesh::draw_cylinder(GLShader &shader, const Vector3D &axis, const V
            r * x_axis.z, r * y_axis.z, r * z_axis.z, p.z,
            0,             0,             0,             1;
 
-  std::cout << "Model Matrix:" << std::endl << model << std::endl;
+  //std::cout << "Model Matrix:" << std::endl << model << std::endl;
 
   //scale the cylinder by the height 
-  model(1, 1) *= h;
+  model *= h;
 
   shader.setUniform("u_model", model);
 

@@ -1,9 +1,9 @@
 {
     "cylinder": {
-      "center": [0, 0, 0],
+      "center": [1, 1, 2],
       "axis": [1, 1, 1],
-      "radius": 0.01,
-      "height": 1,
+      "radius": 0.5,
+      "height": 3,
       "friction": 0.5
     },
     "cloth": {
