@@ -28,6 +28,7 @@ namespace CGL {
             MatrixXf normals;
             MatrixXf uvs;
             MatrixXf tangents;
+            MatrixXf collisionMarkers;
             int width, height;
 
         private:

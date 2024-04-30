@@ -16,10 +16,13 @@ uniform vec2 u_ripples_size;
 uniform float u_normal_scaling;
 uniform float u_height_scaling;
 
+uniform mat3 collisionPoints;
+
 in vec4 v_position;
 in vec4 v_normal;
 in vec4 v_tangent;
 in vec2 v_uv;
+in vec2 v_collision;
 
 out vec4 out_color;
 
@@ -206,8 +209,16 @@ void main() {
     // calculate I/r^2
     vec4 I_r2 = vec4(u_light_intensity, 0.0) / (r * r);
 
+    // color for phong shading
+    vec4 p_color = u_color;
+
+    // if collision point, color it red
+    if (v_collision.x > 0.0) {
+		p_color = vec4(1.0, 0.0, 0.0, 0.0);
+	}
+
     // Apply the phong model to the base color
-    vec4 phong_color = (k_a * I_a) + (k_d * I_r2 * u_color * cos_theta_nl) + (k_s * I_r2 * u_color * pow(cos_theta_nh, p));
+    vec4 phong_color = (k_a * I_a) + (k_d * I_r2 * p_color * cos_theta_nl) + (k_s * I_r2 * p_color * pow(cos_theta_nh, p));
 
     out_color = phong_color;
     out_color.a = 1.0;
