@@ -13,6 +13,8 @@
 #define TANGEN_OFFSET 8
 #define VERTEX_SIZE 11
 
+#define M_PI 3.14159265358979323846
+
 
 using namespace nanogui;
 
@@ -142,8 +144,8 @@ void CylinderMesh::build_data() {
 }
 
 void CylinderMesh::draw_cylinder(GLShader &shader, const Vector3D &axis, const Vector3D &p, double r, double h) {
-    std::cout << "axis: " << axis << std::endl; 
-    std::cout << "position: " << p << std::endl;
+    //std::cout << "axis: " << axis << std::endl; 
+    //std::cout << "position: " << p << std::endl;
     // Vector3D z_axis = axis.unit();
     // Vector3D x_axis = cross(Vector3D(0, 1, 0), z_axis).unit();
     // Vector3D y_axis = cross(z_axis, x_axis).unit();
@@ -193,14 +195,14 @@ void CylinderMesh::draw_cylinder(GLShader &shader, const Vector3D &axis, const V
 
     model = translate * rotate * scale;
 
-    std::cout << "Translate:" << std::endl
-              << translate << std::endl;
+    //std::cout << "Translate:" << std::endl
+    //          << translate << std::endl;
 
-    std::cout << "Scale:" << std::endl
-    << scale << std::endl;
+    //std::cout << "Scale:" << std::endl
+    //<< scale << std::endl;
 
-    std::cout << "Model Matrix:" << std::endl
-              << model << std::endl;
+    //std::cout << "Model Matrix:" << std::endl
+    //          << model << std::endl;
 
     // scale the cylinder by the height
     // model(1, 1) *= h * 100;
