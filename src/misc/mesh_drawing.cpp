@@ -212,32 +212,52 @@ namespace CGL {
             // find the triangle that the point mass is in
             int x1 = std::floor(x);
             int y1 = std::floor(y);
+            int half = 0;
+            if (x + y > 1) {
+              // we are in the second half triangle
+              half = 1;
+            }
             // find the relative position of the point mass in the triangle
             double x2 = x - x1;
             double y2 = y - y1;
             // find the triangle that the point mass is in
-            double* vPtr1 = &vertices[VERTEX_SIZE * (y1 * width + x1)];
+            double* vPtr1 = &vertices[VERTEX_SIZE * ((y1 + half) * width + (x1 + half))];
             double* vPtr2 = &vertices[VERTEX_SIZE * ((y1 + 1) * width + x1)];
             double* vPtr3 = &vertices[VERTEX_SIZE * (y1 * width + x1 + 1)];
+
+            if (!half) {
+              // keep triangle order (probably fine but just in case)
+              double* temp = vPtr2;
+              vPtr2 = vPtr3;
+              vPtr3 = temp;
+            }
 
             Vector3D p1(vPtr1[VERTEX_OFFSET], vPtr1[VERTEX_OFFSET + 1], vPtr1[VERTEX_OFFSET + 2]);
             Vector3D p2(vPtr2[VERTEX_OFFSET], vPtr2[VERTEX_OFFSET + 1], vPtr2[VERTEX_OFFSET + 2]);
             Vector3D p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1], vPtr3[VERTEX_OFFSET + 2]);
 
-            // find the closest point on the triangle to the point mass
-            if (x2 + y2 < 1) {
-				closest_point = p1 + x2 * (p3 - p1) + y2 * (p2 - p1);
-			}
-            else {
-				closest_point = p3 + (1 - x2) * (p2 - p3) + (1 - y2) * (p1 - p3);
-			}
-            // if the point mass is below the mesh, move it to the closest point on the mesh
-            if (pm.position.y <= closest_point.y + 0.001) {
-                pm.last_position = pm.position;
-                // add adjustment factor to keep the point mass on the surface
-                pm.position.y = closest_point.y + 0.001;
-                
+            // todo: use normal vector for collision
+            Vector3D normal = cross(p3 - p1, p2 - p1);
+
+            double offset = dot(pm.position - p1, normal);
+            if (offset < 0) {
+              pm.position -= offset * normal;
             }
+
+            // find the closest point on the triangle to the point mass
+         //   if (x2 + y2 < 1) {
+				     // closest_point = p1 + x2 * (p3 - p1) + y2 * (p2 - p1);
+			      //}
+         //   else {
+				     // closest_point = p3 + (1 - x2) * (p2 - p3) + (1 - y2) * (p1 - p3);
+			      //}
+         //   // if the point mass is below the mesh, move it to the closest point on the mesh
+         //   if (pm.position.y <= closest_point.y + 0.001) {
+         //       // pm.last_position = pm.position;
+         //       pm.position = closest_point;
+         //       // add adjustment factor to keep the point mass on the surface
+         //       pm.position.y += 0.001;
+         //   }
         }
 
         void MeshDrawing::drawMesh(GLShader& shader, const Vector3D& position, float scale) {

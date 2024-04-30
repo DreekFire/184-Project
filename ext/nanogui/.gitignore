@@ -1,6 +1,7 @@
 ext/pybind11*.a
 *.exe
 *.lib
+*.cmake
 .DS_Store
 ext_build
 nanogui_resources.*

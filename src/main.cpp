@@ -16,6 +16,8 @@
 #include "collision/plane.h"
 #include "collision/sphere.h"
 #include "collision/dune.h"
+#include "collision/cylinder.h"
+#include "collision/cube.h"
 #include "cloth.h"
 #include "clothSimulator.h"
 #include "json.hpp"
@@ -34,8 +36,9 @@ const string SPHERE = "sphere";
 const string PLANE = "plane";
 const string CLOTH = "cloth";
 const string DUNE = "dune";
-
-const unordered_set<string> VALID_KEYS = {SPHERE, PLANE, DUNE, CLOTH};
+const string CYLINDER = "cylinder";
+const string CUBE = "cube";
+const unordered_set<string> VALID_KEYS = {SPHERE, PLANE, DUNE, CLOTH, CUBE, CYLINDER};
 
 ClothSimulator *app = nullptr;
 GLFWwindow *window = nullptr;
@@ -158,7 +161,7 @@ void incompleteObjectError(const char *object, const char *attribute) {
   exit(-1);
 }
 
-bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vector<CollisionObject *>* objects, int sphere_num_lat, int sphere_num_lon, string project_root) {
+bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vector<CollisionObject *>* objects, int sphere_num_lat, int sphere_num_lon, int cylinder_num_lat, int cylinder_num_lon, string project_root) {
   // Read JSON from file
   ifstream i(filename);
   if (!i.good()) {
@@ -181,7 +184,7 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
     // Retrieve object
     json object = it.value();
 
-    // Parse object depending on type (cloth, sphere, or plane)
+    // Parse object depending on type (cloth, sphere, dune, cube, or plane)
     if (key == CLOTH) {
       // Cloth
       double width, height;
@@ -333,6 +336,30 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
 
         Sphere* s = new Sphere(origin, radius, friction, sphere_num_lat, sphere_num_lon);
         objects->push_back(s);
+    }
+    else if (key == CUBE) { // HANDLE A DUNE
+        Vector3D point;
+        int size;
+
+        auto it_point = object.find("point");
+        if (it_point != object.end()) {
+            vector<double> vec_point = *it_point;
+            point = Vector3D(vec_point[0], vec_point[1], vec_point[2]);
+        }
+        else {
+            incompleteObjectError("cube", "point");
+        }
+
+        auto it_size = object.find("size");
+        if (it_size != object.end()) {
+			size = *it_size;
+		}
+        else {
+			incompleteObjectError("cube", "size");
+		}
+
+        Cube* c = new Cube(size, point);
+        objects->push_back(c);
     } else if (key == DUNE) { // HANDLE A DUNE
         Vector3D point, normal;
         double friction;
@@ -365,9 +392,52 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
         }
 
         Dune* d = new Dune(point, normal, friction, project_root);
-        objects->push_back(d);
-    } else { // PLANE
-      Vector3D point, normal;
+        objects->push_back(d);}
+    // } else if (key == CYLINDER) {
+    //   Vector3D center, axis;
+    //   double radius, height, friction;
+
+    //   auto it_center = object.find("center");
+    //   if (it_center != object.end()) {
+    //     vector<double> vec_center = *it_center;
+    //     center = Vector3D(vec_center[0], vec_center[1], vec_center[2]);
+    //   } else {
+    //     incompleteObjectError("cylinder", "center");
+    //   }
+
+    //   auto it_axis = object.find("axis");
+    //   if (it_axis != object.end()) {
+    //     vector<double> vec_axis = *it_axis;
+    //     axis = Vector3D(vec_axis[0], vec_axis[1], vec_axis[2]);
+    //   } else {
+    //     incompleteObjectError("cylinder", "axis");
+    //   }
+
+    //   auto it_radius = object.find("radius");
+    //   if (it_radius != object.end()) {
+    //     radius = *it_radius;
+    //   } else {
+    //     incompleteObjectError("cylinder", "radius");
+    //   }
+
+    //   auto it_height = object.find("height");
+    //   if (it_height != object.end()) {
+    //     height = *it_height;
+    //   } else {
+    //     incompleteObjectError("cylinder", "height");
+    //   }
+
+    //   auto it_friction = object.find("friction");
+    //   if (it_friction != object.end()) {
+    //     friction = *it_friction;
+    //   } else {
+    //     incompleteObjectError("cylinder", "friction");
+    //   }
+
+    //   Cylinder *c = new Cylinder(center, axis, radius, height, friction, cylinder_num_lat, cylinder_num_lon);
+    //   objects->push_back(c);
+    // } else { // PLANE
+      else {Vector3D point, normal;
       double friction;
 
       auto it_point = object.find("point");
@@ -443,6 +513,9 @@ int main(int argc, char **argv) {
   
   int sphere_num_lat = 40;
   int sphere_num_lon = 40;
+
+  int cylinder_num_lat = 40;
+  int cylinder_num_lon = 40;
   
   std::string file_to_load_from;
   bool file_specified = false;
@@ -468,6 +541,7 @@ int main(int argc, char **argv) {
           arg_int = 1;
         }
         sphere_num_lat = arg_int;
+        cylinder_num_lat = arg_int;
         break;
       }
       case 'o': {
@@ -476,6 +550,7 @@ int main(int argc, char **argv) {
           arg_int = 1;
         }
         sphere_num_lon = arg_int;
+        cylinder_num_lon = arg_int;
         break;
       }
       default: {
@@ -499,7 +574,7 @@ int main(int argc, char **argv) {
     file_to_load_from = def_fname.str();
   }
   
-  bool success = loadObjectsFromFile(file_to_load_from, &cloth, &cp, &objects, sphere_num_lat, sphere_num_lon, project_root);
+  bool success = loadObjectsFromFile(file_to_load_from, &cloth, &cp, &objects, sphere_num_lat, sphere_num_lon, cylinder_num_lat, cylinder_num_lon, project_root);
   if (!success) {
     std::cout << "Warn: Unable to load from file: " << file_to_load_from << std::endl;
   }

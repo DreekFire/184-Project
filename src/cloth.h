@@ -11,6 +11,10 @@
 #include "collision/collisionObject.h"
 #include "spring.h"
 
+#include "internal_coords/jansen.h"
+#include "collision/cylinder.h"
+#include "collision/sphere.h"
+
 using namespace CGL;
 using namespace std;
 
@@ -42,17 +46,22 @@ struct ClothParameters {
 };
 
 struct Beest {
-  Beest() {}
-  Beest(int numLegs);
+  Beest() : scale(0.4) {}
+  Beest(float scale) : scale(scale) {}
   ~Beest();
-
+  void addTube();
   void buildBeest();
-  void simulate(float t);
+  void simulate(double frames_per_sec, double simulation_steps,
+    vector<Vector3D> external_accelerations,
+    vector<CollisionObject*>* collision_objects,
+    float ks);
 
-  int numLegs;
-  float q;
+  float scale;
   vector<PointMass> pms;
   vector<Spring> ss;
+  vector<Cylinder> cs;
+  vector<Sphere> spheres;
+  Jansen legModel;
 };
 
 struct Cloth {

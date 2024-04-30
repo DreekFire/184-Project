@@ -11,6 +11,9 @@
 #include "collision/plane.h"
 #include "collision/sphere.h"
 #include "collision/dune.h"
+#include "collision/cylinder.h"
+
+#include "collision/cube.h"
 #include "misc/camera_info.h"
 #include "misc/file_utils.h"
 // Needed to generate stb_image binaries. Should only define in exactly one source file importing stb_image.h.
@@ -246,33 +249,8 @@ bool ClothSimulator::isAlive() { return is_alive; }
 void ClothSimulator::drawContents() {
   glEnable(GL_DEPTH_TEST);
 
-  if (!is_paused) {
-    vector<Vector3D> external_accelerations = {gravity};
-
-    for (int i = 0; i < simulation_steps; i++) {
-      cloth->simulate(frames_per_sec, simulation_steps, cp, external_accelerations, collision_objects);
-    }
-  }
-
   // Bind the active shader
-
   const UserShader& active_shader = shaders[active_shader_idx];
-
-  // grab the sand shader from the list
-  const UserShader& sand_shader = shaders[shaders.size() - 2];
-
-  // grab the sky shader from the list
-  const UserShader& sky_shader = shaders[shaders.size() - 1];
-
-  // bind the sky shader and add all the uniforms and other needed stuff to make it work
-  GLShader &skyShader = *sky_shader.nanogui_shader;
-  skyShader.bind();
-  // send the sun position to the shader and the sun color
-  skyShader.setUniform("u_sun_position", Vector3f(150, 500, -700), false);
-  skyShader.setUniform("u_sun_color", Vector3f(1, 1, 1), false);
-
-  // draw the sky (it requires no uniforms)
-  drawSky(skyShader);
 
   // bind the cloth shader
   GLShader &shader = *active_shader.nanogui_shader;
@@ -290,21 +268,35 @@ void ClothSimulator::drawContents() {
 
   shader.setUniform("u_model", model);
   shader.setUniform("u_view_projection", viewProjection);
+  shader.setUniform("u_color", color, false);
+
+  if (!is_paused) {
+    vector<Vector3D> external_accelerations = {gravity};
+
+    for (int i = 0; i < simulation_steps; i++) {
+      cloth->simulate(frames_per_sec, simulation_steps, cp, external_accelerations, collision_objects);
+    }
+  }
+
+  /*for (auto leg : cloth->beest.cs) {
+    leg.render(shader);
+  }
+  for (auto sphere : cloth->beest.spheres) {
+    sphere.render(shader);
+  }*/
+  shader.setUniform("u_model", model);
 
   switch (active_shader.type_hint) {
   case WIREFRAME:
-    shader.setUniform("u_color", color, false);
-    // drawWireframe(shader);
+    drawWireframe(shader);
     drawBeestWireframe(shader);
     break;
   case NORMALS:
     drawNormals(shader);
     break;
   case PHONG:
-  
     // Others
     Vector3D cam_pos = camera.position();
-    shader.setUniform("u_color", color, false);
     shader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
     shader.setUniform("u_light_pos", Vector3f(150, 500, -700), false);
     shader.setUniform("u_light_intensity", Vector3f(200000, 200000, 200000), false);
@@ -327,38 +319,68 @@ void ClothSimulator::drawContents() {
   }
 
   for (CollisionObject *co : *collision_objects) {
-    // grab the sand shader and add all the uniforms and other needed stuff to make it work
-    GLShader &sandShader = *sand_shader.nanogui_shader;   
-    sandShader.bind();
-    sandShader.setUniform("u_model", model);
-    sandShader.setUniform("u_view_projection", viewProjection);
-    // Others
-    Vector3D cam_pos = camera.position();
-    sandShader.setUniform("u_color", color, false);
-    sandShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
-    sandShader.setUniform("u_light_pos", Vector3f(150, 500, -700), false);
-    sandShader.setUniform("u_light_intensity", Vector3f(200000, 200000, 200000), false);
-    sandShader.setUniform("u_texture_1_size", Vector2f(m_gl_texture_1_size.x, m_gl_texture_1_size.y), false);
-    sandShader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
-    sandShader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
-    sandShader.setUniform("u_texture_4_size", Vector2f(m_gl_texture_4_size.x, m_gl_texture_4_size.y), false);
-    sandShader.setUniform("u_ripples_size", Vector2f(m_gl_ripples_size.x, m_gl_ripples_size.y), false);
-    // Textures
-    sandShader.setUniform("u_texture_1", 1, false);
-    sandShader.setUniform("u_texture_2", 2, false);
-    sandShader.setUniform("u_texture_3", 3, false);
-    sandShader.setUniform("u_texture_4", 4, false);
-    sandShader.setUniform("u_ripples", 5, false);
+      // check if it's the cube and render it with the sky shader
+      if (co) {
+          if (Cube* cube_test = dynamic_cast<Cube*>(co)) {
+              // grab the sky shader from the list
+              const UserShader& sky_shader = shaders[shaders.size() - 1];
+              GLShader& skyShader = *sky_shader.nanogui_shader;
+              skyShader.bind();
+              skyShader.setUniform("u_model", model);
+              skyShader.setUniform("u_view_projection", viewProjection);
+              // send the sun position to the shader and the sun color
+              skyShader.setUniform("u_sun_position", Vector3f(150, 500, -700), false);
+              skyShader.setUniform("u_sun_color", Vector3f(1, 1, 1), false);
+              // send all the other uniforms needed for the sky shader
+              Vector3D cam_pos = camera.position();
+              skyShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
+              // grab the time and send it to the shader
+              // this is used to animate the sky
+              skyShader.setUniform("u_time", (float)glfwGetTime(), false);
+              // grab the screen size and send it to the shader as a vec2   
+              skyShader.setUniform("u_resolution", Vector2f(screen_w, screen_h), false);
+              // disable the depth test so the sky is always rendered, render the sky and enable the depth test again
+              co->render(skyShader);
+              // skip the rest of the code for this object
+              continue;
+          }
+          else if (Dune* dune_test = dynamic_cast<Dune*>(co)) {
+              // grab the sand shader from the list
+              const UserShader& sand_shader = shaders[shaders.size() - 2];
+              // grab the sand shader and add all the uniforms and other needed stuff to make it work
+              GLShader& sandShader = *sand_shader.nanogui_shader;
+              sandShader.bind();
+              sandShader.setUniform("u_model", model);
+              sandShader.setUniform("u_view_projection", viewProjection);
+              // Others
+              Vector3D cam_pos = camera.position();
+              sandShader.setUniform("u_color", color, false);
+              sandShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
+              sandShader.setUniform("u_light_pos", Vector3f(150, 500, -700), false);
+              sandShader.setUniform("u_light_intensity", Vector3f(200000, 200000, 200000), false);
+              sandShader.setUniform("u_texture_1_size", Vector2f(m_gl_texture_1_size.x, m_gl_texture_1_size.y), false);
+              sandShader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
+              sandShader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
+              sandShader.setUniform("u_texture_4_size", Vector2f(m_gl_texture_4_size.x, m_gl_texture_4_size.y), false);
+              sandShader.setUniform("u_ripples_size", Vector2f(m_gl_ripples_size.x, m_gl_ripples_size.y), false);
+              // Textures
+              sandShader.setUniform("u_texture_1", 1, false);
+              sandShader.setUniform("u_texture_2", 2, false);
+              sandShader.setUniform("u_texture_3", 3, false);
+              sandShader.setUniform("u_texture_4", 4, false);
+              sandShader.setUniform("u_ripples", 5, false);
 
-    sandShader.setUniform("u_normal_scaling", m_normal_scaling, false);
-    sandShader.setUniform("u_height_scaling", m_height_scaling, false);
+              sandShader.setUniform("u_normal_scaling", m_normal_scaling, false);
+              sandShader.setUniform("u_height_scaling", m_height_scaling, false);
 
-    sandShader.setUniform("u_texture_cubemap", 5, false);
-    co->render(sandShader);
+              sandShader.setUniform("u_texture_cubemap", 5, false);
+              co->render(sandShader);
+		  }
+          else {
+			  co->render(shader);
+		  }
+      } 
   }
-
-
-
 }
 
 void ClothSimulator::drawWireframe(GLShader &shader) {
@@ -454,6 +476,40 @@ void ClothSimulator::drawBeestWireframe(GLShader &shader) {
   //shader.uploadAttrib("in_normal", normals);
 
   shader.drawArray(GL_LINES, 0, num_springs * 2);
+  
+  Eigen::Matrix<float, 4, 2> ground_positions;
+  ground_positions.col(0) << -10, 0, 0, 1.0;
+  ground_positions.col(1) << 10, 0, 0, 1.0;
+  
+  shader.setUniform("u_color", nanogui::Color(0.0f, 1.0f, 0.0f, 1.0f), false);
+
+  shader.uploadAttrib("in_position", ground_positions, false);
+
+  shader.drawArray(GL_LINES, 0, 2);
+  
+  /*
+  Eigen::Matrix<float, 4, -1> vLines;
+  vLines.resize(4, 2 * Jansen::nPoints * this->cloth->beest.numLegs);
+  vLines(Eigen::all, Eigen::seq(0, Eigen::last, 2)) = positions;
+  vLines(Eigen::all, Eigen::seq(1, Eigen::last, 2)) = positions;
+  vLines(Eigen::seqN(0, 3), Eigen::seq(1, Eigen::last, 2)) //+= cloth->beest.legModels[0].dpdq.col(0).reshaped(3, Jansen::nPoints);
+    // cloth->beest.legModels[0].rotation * cloth->beest.legModels[0].dpdq.col(0).reshaped(3, Jansen::nPoints);
+    += cloth->beest.legModels[0].v.reshaped(3, Jansen::nPoints) * 0.1;
+  for (int i = 0; i < Jansen::nPoints; i++) {
+    vLines(Eigen::seqN(0, 3), 2 * i + 1) += (cloth->beest.legModels[0].inverseMoment
+      * cloth->beest.legModels[0].angularMomentum).cross(
+          cloth->beest.legModels[0].rotation
+          * cloth->beest.legModels[0].p.middleRows<3>(3 * i)
+      ) * 0.1;
+  }
+  vLines(Eigen::seqN(0, 3), Eigen::seq(1, Eigen::last, 2)).colwise() += cloth->beest.legModels[0].velocity * 0.1;
+
+  shader.setUniform("u_color", nanogui::Color(1.0f, 0.0f, 0.0f, 1.0f), false);
+
+  shader.uploadAttrib("in_position", vLines, false);
+
+  shader.drawArray(GL_LINES, 0, 2 * Jansen::nPoints);
+  */
 }
 
 void ClothSimulator::drawNormals(GLShader &shader) {
