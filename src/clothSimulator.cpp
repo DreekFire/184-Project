@@ -335,8 +335,8 @@ void ClothSimulator::drawContents() {
               skyShader.setUniform("u_model", model);
               skyShader.setUniform("u_view_projection", viewProjection);
               // send the sun position to the shader and the sun color
-              skyShader.setUniform("u_sun_position", Vector3f(150, 500, -700), false);
-              skyShader.setUniform("u_sun_color", Vector3f(1, 1, 1), false);
+              skyShader.setUniform("u_sun_position", Vector3f(0, 0.5, 0), false);
+              skyShader.setUniform("u_sun_color", Vector3f(255, 255, 0), false);
               // send all the other uniforms needed for the sky shader
               Vector3D cam_pos = camera.position();
               skyShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
