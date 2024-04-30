@@ -122,7 +122,9 @@ namespace CGL {
             normals = MatrixXf(4, indices.size() * 3);
             uvs = MatrixXf(2, indices.size() * 3);
             tangents = MatrixXf(4, indices.size() * 3);
-
+            // Initialize collision markers which will have no specific size
+            collisionMarkers = MatrixXf(2, indices.size() * 3);
+            
             // Calculate normals and tangents per vertex
             // Initialize accumulators for normals and tangents
             std::vector<Vector3D> vertexNormals(vertices.size(), Vector3D(0, 0, 0));
@@ -193,6 +195,9 @@ namespace CGL {
                                             vertexTangents[vertexIndex].y,
                                             vertexTangents[vertexIndex].z,
                                             0.0;
+
+                     // Initialize collision markers to 0
+                     collisionMarkers.col(i + j) << 0, 0;
                 }
             }
         }
@@ -236,9 +241,16 @@ namespace CGL {
                 pm.last_position = pm.position;
                 // add adjustment factor to keep the point mass on the surface
                 pm.position.y = closest_point.y + 0.001;
-                
-            }
+                // if we have collided, we need to mark the vertex in the collision markers matrix as 1
+                // find the index of the vertex in the vertices array
+       		    int index = (y1 * width + x1) * 3;
+				// mark the vertex and its neighbors as collided
+				collisionMarkers.col(index) << 1, 1;
+				collisionMarkers.col(index + 1) << 1, 1;
+				collisionMarkers.col(index + 2) << 1, 1;
+            } 
         }
+
 
         void MeshDrawing::drawMesh(GLShader& shader, const Vector3D& position, float scale) {
             Matrix4f model;
@@ -259,6 +271,11 @@ namespace CGL {
             }
             if (shader.attrib("in_tangent", false) != -1) {
                 shader.uploadAttrib("in_tangent", tangents, false);
+            }
+
+            // Upload the collision information to the shader
+            if (shader.attrib("in_collision", false) != -1) {
+                shader.uploadAttrib("in_collision", collisionMarkers, false);
             }
 
             shader.drawArray(GL_TRIANGLES, 0, indices.size());
