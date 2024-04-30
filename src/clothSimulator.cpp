@@ -340,6 +340,8 @@ void ClothSimulator::drawContents() {
               // send all the other uniforms needed for the sky shader
               Vector3D cam_pos = camera.position();
               skyShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
+              Vector3D cam_target = camera.view_point();
+              skyShader.setUniform("u_cam_target", Vector3f(cam_target.x, cam_target.y, cam_target.z), false);
               // grab the time and send it to the shader
               // this is used to animate the sky
               skyShader.setUniform("u_time", (float)glfwGetTime(), false);
