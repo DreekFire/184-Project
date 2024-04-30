@@ -125,7 +125,7 @@ if(WIN32)
 
   if(MSVC)
 
-    set(MSVC_CXX_FLAGS "-std=c++11")
+    set(MSVC_CXX_FLAGS "/std:c++17 /arch:AVX2")
 
     if(CGL_BUILD_DEBUG)
         set(CMAKE_BUILD_TYPE Debug)

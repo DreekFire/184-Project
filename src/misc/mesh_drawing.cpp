@@ -224,6 +224,12 @@ namespace CGL {
             Vector3D p2(vPtr2[VERTEX_OFFSET], vPtr2[VERTEX_OFFSET + 1], vPtr2[VERTEX_OFFSET + 2]);
             Vector3D p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1], vPtr3[VERTEX_OFFSET + 2]);
 
+            // todo: use normal vector for collision
+            Vector3D normal = cross(p2 - p1, p3 - p1);
+            if (normal.y < 0) {
+                std::cout << "flip the normal Derek" << std::endl;
+            }
+
             // find the closest point on the triangle to the point mass
             if (x2 + y2 < 1) {
 				closest_point = p1 + x2 * (p3 - p1) + y2 * (p2 - p1);
@@ -233,10 +239,10 @@ namespace CGL {
 			}
             // if the point mass is below the mesh, move it to the closest point on the mesh
             if (pm.position.y <= closest_point.y + 0.001) {
-                pm.last_position = pm.position;
+                // pm.last_position = pm.position;
+                pm.position = closest_point;
                 // add adjustment factor to keep the point mass on the surface
-                pm.position.y = closest_point.y + 0.001;
-                
+                pm.position.y += 0.001;
             }
         }
 

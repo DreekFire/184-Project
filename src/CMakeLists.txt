@@ -92,11 +92,20 @@ target_link_libraries(clothsim
 #-------------------------------------------------------------------------------
 if(APPLE)
   set_property( TARGET clothsim APPEND_STRING PROPERTY COMPILE_FLAGS
-                "-Wno-deprecated-declarations -Wno-c++11-extensions")
+                "-Wno-deprecated-declarations -Wno-c++17-extensions")
 endif(APPLE)
 
 # Put executable in build directory root
 set(EXECUTABLE_OUTPUT_PATH ..)
+
+target_compile_features(clothsim PRIVATE cxx_std_17)
+if(WIN32)
+list(APPEND CLOTHSIM_VIEWER_SOURCE
+    # For get-opt
+    misc/getopt.c
+)
+endif(WIN32)
+
 
 # Install to project root
 install(TARGETS clothsim DESTINATION ${ClothSim_SOURCE_DIR})

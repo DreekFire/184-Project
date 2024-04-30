@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(ClothSim)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -126,11 +126,12 @@ if(WIN32)
 
   # NOTE: future maintainers, you may want to use add_compile_definitions instead.
   # this was added because too many students are using old CMake (<3.12) versions.
+
   add_definitions(/DEIGEN_DONT_ALIGN)
 
   if(MSVC)
 
-    set(MSVC_CXX_FLAGS "-std=gnu++11")
+    set(MSVC_CXX_FLAGS "/std:c++17 /arch:AVX2 /bigobj")
 
     if(BUILD_DEBUG)
         set(CMAKE_BUILD_TYPE Debug)
