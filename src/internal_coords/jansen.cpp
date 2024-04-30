@@ -480,7 +480,7 @@ void Jansen::simulate(double frames_per_sec, double simulation_steps,
     pm.last_position = lastPositions[i];
     if (pos.y < 0) {
       // p + (lp - p) / (lp.y - p.y) * (- p.y)
-      pm.position += (pm.last_position - pm.position) * std::clamp(float(- pm.position.y / (pm.last_position.y - pm.position.y)), 0.0f, 1.0f);
+      pm.position += (pm.last_position - pm.position) * min(max(float(- pm.position.y / (pm.last_position.y - pm.position.y)), 0.0f), 1.0f);
       // pm.position.y = 0;
     }
 

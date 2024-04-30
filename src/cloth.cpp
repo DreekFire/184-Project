@@ -7,6 +7,8 @@
 #include "collision/plane.h"
 #include "collision/sphere.h"
 #include "collision/dune.h"
+#include "collision/cylinder.h"
+#include "collision/cube.h"
 
 #include "CGL/vector2D.h"
 #include "linkageUtils.h"
@@ -18,48 +20,40 @@ Beest::~Beest() {
   ss.clear();
 }
 
+void Beest::addTube() {
+
+}
+
 void Beest::buildBeest() {
   std::vector<int> fixedPoints = { 0, 2, 8 };
   pms.reserve(Jansen::nPoints);
   ss.reserve((22 + 3) * Jansen::nLegs - 3);
   for (int i = 0; i < Jansen::nPoints; i++) {
     pms.push_back(PointMass(Vector3D(0), false));
+    spheres.push_back(Sphere(Vector3D(0), 0.02, 0));
   }
 
-  //for (int i = 0; i < numLegs; i++) {
   legModel = Jansen(
     Eigen::Matrix<float, Jansen::nCoords, 1>( 0 ),
     Eigen::Matrix<float, Jansen::nCoords, 1>( 0 ),
     Eigen::Vector3f(0.0f, 7.0f, 0.0f),
     Eigen::Matrix3f::Identity()
   );
-  //}
 
-  //for (int l = 0; l < numLegs; l++) {
-  //  int idx = l * Jansen::nPoints;
   std::vector<CGL::Vector3D> positions = legModel.positions;
   for (int i = 0; i < Jansen::nPoints; i++) {
     pms[i].position = scale * positions[i];
+    spheres[i].pose(pms[i].position);
   }
-  //}
 
   int pPerSet = 14;
 
   for (int l = 0; l < Jansen::nLegs - 1; l++) {
     int idx = l * pPerSet;
     for (int p1 : fixedPoints) {
-        ss.push_back(Spring(&(pms[idx + p1]), &pms[idx + pPerSet + p1], STRUCTURAL));
+      ss.push_back(Spring(&(pms[idx + p1]), &pms[idx + pPerSet + p1], STRUCTURAL));
     }
   }
-
-  /*for (int l = 0; l < numLegs - 2; l++) {
-    int idx = l * Jansen::nPoints;
-    for (int p1 : fixedPoints) {
-      for (int p2 : fixedPoints) {
-        ss.push_back(Spring(&(pms[idx + p1]), &pms[idx + 2 * Jansen::nPoints + p2], BENDING));
-      }
-    }
-  }*/
 
   //for (int l = 0; l < numLegs; l++) {
   for (int i = 0; i < legModel.nLegs; i++) {
@@ -92,6 +86,15 @@ void Beest::buildBeest() {
     ss.push_back(Spring(&(pms[idx + 11]), &pms[idx + 13], SHEARING));
     ss.push_back(Spring(&(pms[idx + 12]), &pms[idx + 13], SHEARING));*/
   //}
+  cs.clear();
+  for (auto spring : ss) {
+    Vector3D a = spring.pm_a->position;
+    Vector3D b = spring.pm_b->position;
+    Vector3D center = (a + b) / 2;
+    Vector3D axis = a - b;
+    double dist = (a - b).norm() / 2;
+    cs.push_back(Cylinder(center, axis, 0.01, dist, 0.5));
+  }
 }
 
 void Beest::simulate(double frames_per_sec, double simulation_steps,
@@ -99,63 +102,32 @@ void Beest::simulate(double frames_per_sec, double simulation_steps,
   vector<CollisionObject*>* collision_objects,
   float ks) {
 
-  /*vector<vector<Vector3D>> pointForces(numLegs);
-
-  float meanQ = 0;
-  for (int l = 0; l < numLegs; l++) {
-    meanQ += legModels[l].q(0, 0) - 2 * PI / (numLegs + 1) * l;
-  }
-  meanQ /= numLegs;
-
-  for (int l = 0; l < numLegs; l++) {
-    pointForces[l] = vector<Vector3D>(4);*/
   vector<Vector3D> pointForces(4);
   float q = legModel.q(0, 0);
-  //float qForce = (meanQ - q - 2 * PI / (numLegs + 1) * l) * 400;
-  float f = 400; // +qForce;
+  float f = 400;
   pointForces[0] -= f * convertVector(legModel.rotation * Eigen::Vector3f(-sinf(q), cosf(q), 0));
   pointForces[1] += f * (1.5 / 7.6) * convertVector(legModel.rotation.col(1));
   pointForces[2] -= f * (1.5 / 7.6) * convertVector(legModel.rotation.col(1));
   pointForces[3] += f * convertVector(legModel.rotation * Eigen::Vector3f(-sinf(q), cosf(q), 0));
-  //}
-  
-  /*vector<int> fixedPoints = {0, 2, 8};
-  for (int l = 0; l < numLegs - 1; l++) {
-    int idx = l * Jansen::nPoints;
-    for (int i1 = 0; i1 < 3; i1++) {
-      Spring s = ss[fixedPoints.size() * idx + i1];
-      // 0.5 * convertVector(legModels[l].rotation.col(2) + legModels[l + 1].rotation.col(2))
-      Vector3D diff = s.pm_a->position + scale * 3 * Vector3D(0, 0, 1) - s.pm_b->position;
-      pointForces[l][i1] -= 1 * ks * diff;
-      pointForces[l + 1][i1] += 1 * ks * diff;
-    }
-  }*/
-
-
-  /*for (int l = 0; l < numLegs - 2; l++) {
-    int idx = l * Jansen::nPoints;
-    for (int i1 = 0; i1 < 3; i1++) {
-      for (int i2 = 0; i2 < 3; i2++) {
-        Spring s = ss[fixedPoints.size() * fixedPoints.size() * i1 + i2];
-        Vector3D diff = s.pm_a->position - s.pm_b->position;
-        float f_s = ks * 0.05 * (diff.norm());
-        pointForces[l][i1] -= f_s * diff.unit();
-        pointForces[l + 2][i2] += f_s * diff.unit();
-      }
-    }
-  }*/
-  
-  // for (int l = 0; l < numLegs; l++) {
-  //   int idx = l * Jansen::nPoints;
+ 
   legModel.simulate(frames_per_sec, simulation_steps,
     external_accelerations, collision_objects,
     pointForces, { 0, 2, 8, 1 }
   );
-  std::vector<CGL::Vector3D> positions = legModel.positions;
+  vector<Vector3D> positions = legModel.positions;
   for (int i = 0; i < Jansen::nPoints; i++) {
     pms[i].position = scale * positions[i];
+    spheres[i].pose(pms[i].position);
   }
-  // }
+  for (int i = 0; i < ss.size(); i++) {
+    Spring& spring = ss[i];
+    Vector3D a = spring.pm_a->position;
+    Vector3D b = spring.pm_b->position;
+    Vector3D center = (a + b) / 2;
+    Vector3D axis = a - b;
+    double dist = (a - b).norm()/2;
+    cs[i].pose(center, axis);
+  }
 }
 
 Cloth::Cloth(double width, double height, int num_width_points,
@@ -280,7 +252,7 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
 	// 	  double overage = dist - spring.rest_length;
   //         Vector3D force = cp->ks * overage * delta21.unit();
   //         if (s_type == BENDING) {
-  //             force *= 0.2;
+  //             force *= 0.02;
   //         }
   //         spring.pm_a->forces += force;
   //         spring.pm_b->forces -= force;
@@ -328,18 +300,21 @@ void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParame
         Vector3D correction1 = overage * delta21.unit();
         Vector3D correction2 = overage * delta12.unit();
 
-    //       if (!pm1->pinned && !pm2->pinned) {
-    //           pm1->position += correction1 / 2;
-    //           pm2->position += correction2 / 2;
-    //       }
-    //       else if (!pm1->pinned) {
-	  // 		pm1->position += correction1;
-    //       }
-    //       else if (!pm2->pinned) {
-	  // 		pm2->position += correction2;
-	  // 	}
-	  }
+    }
   }
+  //       if (!pm1->pinned && !pm2->pinned) {
+  //           pm1->position += correction1 / 2;
+  //           pm2->position += correction2 / 2;
+  //       }
+  //       else if (!pm1->pinned) {
+	// 		pm1->position += correction1;
+  //       }
+  //       else if (!pm2->pinned) {
+	// 		pm2->position += correction2;
+	// 	}
+	// }
+  // }
+
 }
 
 void Cloth::build_spatial_map() {

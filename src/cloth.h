@@ -12,6 +12,8 @@
 #include "spring.h"
 
 #include "internal_coords/jansen.h"
+#include "collision/cylinder.h"
+#include "collision/sphere.h"
 
 using namespace CGL;
 using namespace std;
@@ -47,7 +49,7 @@ struct Beest {
   Beest() : scale(0.4) {}
   Beest(float scale) : scale(scale) {}
   ~Beest();
-
+  void addTube();
   void buildBeest();
   void simulate(double frames_per_sec, double simulation_steps,
     vector<Vector3D> external_accelerations,
@@ -57,6 +59,8 @@ struct Beest {
   float scale;
   vector<PointMass> pms;
   vector<Spring> ss;
+  vector<Cylinder> cs;
+  vector<Sphere> spheres;
   Jansen legModel;
 };
 
