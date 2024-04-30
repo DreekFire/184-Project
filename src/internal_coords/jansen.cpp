@@ -478,28 +478,28 @@ void Jansen::simulate(double frames_per_sec, double simulation_steps,
     // simple y-check just for testing
     pm.position = pos;
     pm.last_position = lastPositions[i];
-    if (pos.y < 0) {
+    //if (pos.y < 0) {
       // p + (lp - p) / (lp.y - p.y) * (- p.y)
-      pm.position += (pm.last_position - pm.position) * min(max(float(- pm.position.y / (pm.last_position.y - pm.position.y)), 0.0f), 1.0f);
+      //pm.position += (pm.last_position - pm.position) * min(max(float(- pm.position.y / (pm.last_position.y - pm.position.y)), 0.0f), 1.0f);
       // pm.position.y = 0;
-    }
+    //}
 
-    /*for (CollisionObject* co : *collision_objects) {
+    for (CollisionObject* co : *collision_objects) {
       co->collide(pm);
-    }*/
+    }
     CGL::Vector3D diff = pm.position - pos;
-    if (diff.norm2() > 0) {
+    float dNorm = diff.norm();
+    if (dNorm > 0) {
       // float clampFactor = min((0.1 * diff.y) / sqrt(diff.x * diff.x + diff.z * diff.z), 1.0);
       // diff.x *= clampFactor;
       // diff.z *= clampFactor;
       //for (int c = 0; c < 3; c++) { // haha c++
       // todo: constrain pv to be within friction cone, then pass entire pv
-      collision_depths.push_back(diff.y);
+      collision_depths.push_back(dNorm);
       // collision_depths.push_back(abs(diff[c]));
-      CGL::Vector3D f = CGL::Vector3D(0, 1, 0);
       // CGL::Vector3D f = CGL::Vector3D();
       // f[c] = diff[c] > 0 ? 1 : -1;
-      collision_forces.push_back(f);
+      collision_forces.push_back(diff / dNorm);
       collision_idxs.push_back(i);
       //}
     }

@@ -268,45 +268,35 @@ void ClothSimulator::drawContents() {
 
   shader.setUniform("u_model", model);
   shader.setUniform("u_view_projection", viewProjection);
+  shader.setUniform("u_color", color, false);
 
   if (!is_paused) {
     vector<Vector3D> external_accelerations = {gravity};
 
     for (int i = 0; i < simulation_steps; i++) {
       cloth->simulate(frames_per_sec, simulation_steps, cp, external_accelerations, collision_objects);
-      for(auto leg: cloth->beest.cs) {
-        leg.render(shader);
-        // cout << "Leg renderedred";
-      }
-      for (auto sphere : cloth->beest.spheres) {
-        sphere.render(shader);
-      }
     }
   }
 
-  
+  /*for (auto leg : cloth->beest.cs) {
+    leg.render(shader);
+  }
+  for (auto sphere : cloth->beest.spheres) {
+    sphere.render(shader);
+  }*/
+  shader.setUniform("u_model", model);
 
   switch (active_shader.type_hint) {
   case WIREFRAME:
-    shader.setUniform("u_color", color, false);
     drawWireframe(shader);
     drawBeestWireframe(shader);
-    for(auto leg: cloth->beest.cs) {
-        leg.render(shader);
-        // cout << "Leg renderedred";
-    }
-    for (auto sphere : cloth->beest.spheres) {
-        sphere.render(shader);
-    }
     break;
   case NORMALS:
     drawNormals(shader);
     break;
   case PHONG:
-  
     // Others
     Vector3D cam_pos = camera.position();
-    shader.setUniform("u_color", color, false);
     shader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
     shader.setUniform("u_light_pos", Vector3f(150, 500, -700), false);
     shader.setUniform("u_light_intensity", Vector3f(200000, 200000, 200000), false);

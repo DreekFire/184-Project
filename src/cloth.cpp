@@ -25,12 +25,12 @@ void Beest::addTube() {
 }
 
 void Beest::buildBeest() {
-  std::vector<int> fixedPoints = { 0, 2, 8 };
+  std::vector<int> fixedPoints = { 1, 2, 8 };
   pms.reserve(Jansen::nPoints);
   ss.reserve((22 + 3) * Jansen::nLegs - 3);
   for (int i = 0; i < Jansen::nPoints; i++) {
     pms.push_back(PointMass(Vector3D(0), false));
-    spheres.push_back(Sphere(Vector3D(0), 0.02, 0));
+    spheres.push_back(Sphere(Vector3D(0), 0.01, 0));
   }
 
   legModel = Jansen(
@@ -93,7 +93,7 @@ void Beest::buildBeest() {
     Vector3D center = (a + b) / 2;
     Vector3D axis = a - b;
     double dist = (a - b).norm() / 2;
-    cs.push_back(Cylinder(center, axis, 0.01, dist, 0.5));
+    cs.push_back(Cylinder(center, axis, 0.005, dist, 0.5));
   }
 }
 
@@ -104,7 +104,7 @@ void Beest::simulate(double frames_per_sec, double simulation_steps,
 
   vector<Vector3D> pointForces(4);
   float q = legModel.q(0, 0);
-  float f = 400;
+  float f = 660;
   pointForces[0] -= f * convertVector(legModel.rotation * Eigen::Vector3f(-sinf(q), cosf(q), 0));
   pointForces[1] += f * (1.5 / 7.6) * convertVector(legModel.rotation.col(1));
   pointForces[2] -= f * (1.5 / 7.6) * convertVector(legModel.rotation.col(1));
@@ -125,7 +125,6 @@ void Beest::simulate(double frames_per_sec, double simulation_steps,
     Vector3D b = spring.pm_b->position;
     Vector3D center = (a + b) / 2;
     Vector3D axis = a - b;
-    double dist = (a - b).norm()/2;
     cs[i].pose(center, axis);
   }
 }
