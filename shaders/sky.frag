@@ -14,12 +14,12 @@ in vec2 eyeDirection;
 out vec4 fragColor;
 
 void main() {
-    vec3 sunDirection = normalize(u_sun_position - u_cam_pos);
+    vec3 sunDirection = normalize(u_cam_pos - u_sun_position);
     vec3 viewDir = normalize(vec3(eyeDirection, 1.0));
     
     // Calculate the relatve size of the sun based on its distance from the camera
-    float sunDistance = length(u_sun_position - u_cam_pos);
-    float sunSize = 0.0099 / sunDistance;
+    float sunDistance = length(u_cam_pos - u_sun_position);
+    float sunSize = 0.00029;
     
     float phaseFactor = 0.5 + 0.5 * sin(u_time); 
     // Calculate the dot product between view direction and sun direction

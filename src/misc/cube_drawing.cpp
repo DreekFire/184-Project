@@ -107,8 +107,8 @@ namespace CGL {
             shader.setUniform("u_model", model);
 
             shader.uploadAttrib("in_position", positions);
-            shader.uploadAttrib("in_normal", normals);
-            shader.uploadAttrib("in_texcoord", texcoords);  // Upload texture coordinates
+            //shader.uploadAttrib("in_normal", normals);
+            //shader.uploadAttrib("in_texcoord", texcoords);  // Upload texture coordinates
 
             shader.drawArray(GL_TRIANGLES, 0, Indices.size() * 3);
         }
