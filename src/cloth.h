@@ -44,20 +44,20 @@ struct ClothParameters {
 };
 
 struct Beest {
-  Beest() {}
-  Beest(int numLegs);
+  Beest() : scale(0.4) {}
+  Beest(float scale) : scale(scale) {}
   ~Beest();
 
   void buildBeest();
   void simulate(double frames_per_sec, double simulation_steps,
     vector<Vector3D> external_accelerations,
-    vector<CollisionObject*>* collision_objects);
+    vector<CollisionObject*>* collision_objects,
+    float ks);
 
-  int numLegs;
-  float q;
+  float scale;
   vector<PointMass> pms;
   vector<Spring> ss;
-  vector<Jansen> legModels;
+  Jansen legModel;
 };
 
 struct Cloth {

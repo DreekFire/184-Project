@@ -11,25 +11,33 @@ typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ma
 
 class Jansen {
 public:
-  Jansen();
-
   // only 1 coord because extrinsic translation and rotation are handled specially
+  constexpr static int nLegs = 4;
   constexpr static int nCoords = 1;
-  constexpr static int nPoints = 14;
+  constexpr static int nPoints = nLegs * 14;
+
+  Jansen();
+  Jansen(Eigen::Matrix<float, nCoords, 1> q,
+    Eigen::Matrix<float, nCoords, 1> qdot,
+    Eigen::Vector3f translation,
+    Eigen::Matrix3f rotation);
+
   void reset();
   // convert internal coords q to cartesian coords and calculate derivatives
-  void resolve(double dt);
+  void resolve();
   // step the simulation using Lagrangian mechanics
   void simulate(double frames_per_sec, double simulation_steps,
     const std::vector<CGL::Vector3D>& external_accelerations,
-    const std::vector<CollisionObject*>* const collision_objects);
+    const std::vector<CollisionObject*>* const collision_objects,
+    const std::vector<CGL::Vector3D>& external_forces,
+    const std::vector<int>& force_idxs);
   void step(const std::vector<CGL::Vector3D>& forces, const std::vector<int>& idxs, double dt);
   void solveCollisions(const std::vector<CGL::Vector3D>& forces, const std::vector<float>& depths, const std::vector<int>& idxs, double dt);
   // convert the flat vector representation p to a vector of Vector3Ds
-  std::vector<CGL::Vector3D> positions() const;
-  std::vector<CGL::Vector3D> lastPositions() const;
   CGL::Vector3D position(int i) const;
   CGL::Vector3D lastPosition(int i) const;
+
+  std::vector<CGL::Vector3D> convertPositions() const;
 
   float getKE() {
     Eigen::Matrix<float, 3, nPoints> totalVel = v.reshaped(3, nPoints).colwise() + velocity;
@@ -58,11 +66,17 @@ public:
   // cartesian coordinates of each point mass (relative to CoM)
   Eigen::Matrix<float, 3 * nPoints, 1> p;
   Eigen::Matrix<float, 3 * nPoints, 1> v;
-  Eigen::Matrix<float, 3 * nPoints, 1> pLast;
   Eigen::Matrix<float, 3 * nPoints, 1> vLast;
+  std::vector<CGL::Vector3D> positions;
+  std::vector<CGL::Vector3D> lastPositions;
   // derivatives
   Eigen::Matrix<float, 3 * nPoints, nCoords> dpdq;
   Eigen::Matrix<float, 3 * nPoints, nCoords> ddtdpdq;
+
+  Eigen::Matrix<float, nCoords, 1> qInit;
+  Eigen::Matrix<float, nCoords, 1> qdotInit;
+  Eigen::Vector3f translationInit;
+  Eigen::Matrix3f rotationInit;
 };
 
 #endif

@@ -458,13 +458,36 @@ void ClothSimulator::drawBeestWireframe(GLShader &shader) {
   Eigen::Matrix<float, 4, 2> ground_positions;
   ground_positions.col(0) << -10, 0, 0, 1.0;
   ground_positions.col(1) << 10, 0, 0, 1.0;
+  
+  shader.setUniform("u_color", nanogui::Color(0.0f, 1.0f, 0.0f, 1.0f), false);
 
-  //shader.setUniform("u_color", nanogui::Color(1.0f, 1.0f, 1.0f, 1.0f), false);
   shader.uploadAttrib("in_position", ground_positions, false);
-  // Commented out: the wireframe shader does not have this attribute
-  //shader.uploadAttrib("in_normal", normals);
 
   shader.drawArray(GL_LINES, 0, 2);
+  
+  /*
+  Eigen::Matrix<float, 4, -1> vLines;
+  vLines.resize(4, 2 * Jansen::nPoints * this->cloth->beest.numLegs);
+  vLines(Eigen::all, Eigen::seq(0, Eigen::last, 2)) = positions;
+  vLines(Eigen::all, Eigen::seq(1, Eigen::last, 2)) = positions;
+  vLines(Eigen::seqN(0, 3), Eigen::seq(1, Eigen::last, 2)) //+= cloth->beest.legModels[0].dpdq.col(0).reshaped(3, Jansen::nPoints);
+    // cloth->beest.legModels[0].rotation * cloth->beest.legModels[0].dpdq.col(0).reshaped(3, Jansen::nPoints);
+    += cloth->beest.legModels[0].v.reshaped(3, Jansen::nPoints) * 0.1;
+  for (int i = 0; i < Jansen::nPoints; i++) {
+    vLines(Eigen::seqN(0, 3), 2 * i + 1) += (cloth->beest.legModels[0].inverseMoment
+      * cloth->beest.legModels[0].angularMomentum).cross(
+          cloth->beest.legModels[0].rotation
+          * cloth->beest.legModels[0].p.middleRows<3>(3 * i)
+      ) * 0.1;
+  }
+  vLines(Eigen::seqN(0, 3), Eigen::seq(1, Eigen::last, 2)).colwise() += cloth->beest.legModels[0].velocity * 0.1;
+
+  shader.setUniform("u_color", nanogui::Color(1.0f, 0.0f, 0.0f, 1.0f), false);
+
+  shader.uploadAttrib("in_position", vLines, false);
+
+  shader.drawArray(GL_LINES, 0, 2 * Jansen::nPoints);
+  */
 }
 
 void ClothSimulator::drawNormals(GLShader &shader) {

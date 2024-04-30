@@ -19,10 +19,12 @@ Eigen::Vector3f intersectPointDistances(const Eigen::Vector3f& p, float r1, floa
 Eigen::Matrix<float, 3, -1> intersectPointVelocities(const Eigen::Vector3f& p, const Eigen::Matrix<float, 3, -1>& dp, const Eigen::Vector3f& s) {
   Eigen::Matrix<float, 3, -1> vels;
   vels.setZero(3, dp.cols());
-  Eigen::Vector3f pRNorm = p / p.squaredNorm();
+  Eigen::Vector3f leg = s - p;
+  // Eigen::Vector3f projection = leg * (leg / leg.squaredNorm()).transpose() * dp; // 3x1 * 1x3 * 3xnCoords
+  Eigen::Vector3f perp = p - ((p.dot(leg)) / leg.squaredNorm() * leg);
   // ds/dq = ds/dp * dp/dq
   for (int i = 0; i < dp.cols(); i++) {
-    vels.col(i) = pRNorm.cross(dp.col(i)).cross(s);
+    vels.col(i) = (perp / perp.squaredNorm()).cross(dp.col(i)).cross(s);
   }
 
   return vels;
