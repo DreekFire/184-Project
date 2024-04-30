@@ -188,7 +188,7 @@ void main() {
     vec4 I_a = vec4(0.5, 0.5, 0.5, 0);
 
     // arbitrary specular coefficient
-    float k_s = 1.0;
+    float k_s = 2.0;
 
     // arbitrary p value
     float p = 25.0;
