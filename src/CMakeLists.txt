@@ -16,6 +16,7 @@ set(CLOTHSIM_VIEWER_SOURCE
     collision/plane.cpp
     collision/dune.cpp
     collision/cylinder.cpp
+    collision/cube.cpp
 
     # Application
     main.cpp
@@ -25,6 +26,7 @@ set(CLOTHSIM_VIEWER_SOURCE
     # png.cpp
     misc/sphere_drawing.cpp
     misc/mesh_drawing.cpp
+    misc/cube_drawing.cpp
     misc/file_utils.cpp
     misc/cylinder_drawing.cpp
 

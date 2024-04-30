@@ -8,6 +8,7 @@
 #include "collision/sphere.h"
 #include "collision/dune.h"
 #include "collision/cylinder.h"
+#include "collision/cube.h"
 
 #include "CGL/vector2D.h"
 
@@ -165,7 +166,6 @@ void Cloth::buildGrid() {
 void Cloth::simulate(double frames_per_sec, double simulation_steps, ClothParameters *cp,
                      vector<Vector3D> external_accelerations,
                      vector<CollisionObject *> *collision_objects) {
-  // std::cout << beest.point_masses.size() << std::endl;
   beest.simulate(1.0f / (frames_per_sec * simulation_steps));
   // for (int i = 0; i < beest.point_masses.size(); i++) {
   //   std::cout << beest.point_masses[i].position << std::endl;

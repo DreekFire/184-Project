@@ -17,6 +17,7 @@
 #include "collision/sphere.h"
 #include "collision/dune.h"
 #include "collision/cylinder.h"
+#include "collision/cube.h"
 #include "cloth.h"
 #include "clothSimulator.h"
 #include "json.hpp"
@@ -36,8 +37,8 @@ const string PLANE = "plane";
 const string CLOTH = "cloth";
 const string DUNE = "dune";
 const string CYLINDER = "cylinder";
-
-const unordered_set<string> VALID_KEYS = {SPHERE, PLANE, DUNE, CLOTH, CYLINDER};
+const string CUBE = "cube";
+const unordered_set<string> VALID_KEYS = {SPHERE, PLANE, DUNE, CLOTH, CUBE, CYLINDER};
 
 ClothSimulator *app = nullptr;
 GLFWwindow *window = nullptr;
@@ -183,7 +184,7 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
     // Retrieve object
     json object = it.value();
 
-    // Parse object depending on type (cloth, sphere, or plane)
+    // Parse object depending on type (cloth, sphere, dune, cube, or plane)
     if (key == CLOTH) {
       // Cloth
       double width, height;
@@ -335,6 +336,30 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
 
         Sphere* s = new Sphere(origin, radius, friction, sphere_num_lat, sphere_num_lon);
         objects->push_back(s);
+    }
+    else if (key == CUBE) { // HANDLE A DUNE
+        Vector3D point;
+        int size;
+
+        auto it_point = object.find("point");
+        if (it_point != object.end()) {
+            vector<double> vec_point = *it_point;
+            point = Vector3D(vec_point[0], vec_point[1], vec_point[2]);
+        }
+        else {
+            incompleteObjectError("cube", "point");
+        }
+
+        auto it_size = object.find("size");
+        if (it_size != object.end()) {
+			size = *it_size;
+		}
+        else {
+			incompleteObjectError("cube", "size");
+		}
+
+        Cube* c = new Cube(size, point);
+        objects->push_back(c);
     } else if (key == DUNE) { // HANDLE A DUNE
         Vector3D point, normal;
         double friction;
