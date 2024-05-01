@@ -112,13 +112,16 @@
 
 <h2 align="middle">Abstract</h2>
 <p>
-  We created a simulation of a <a href="https://www.strandbeest.com/">strandbeest</a> walking along a beach. We primarily focused on simulating the physical joints of the strandbeest, rigging of our model, and the visual rendering of the sand and sky.
+  We implemented a system for simulating linkages using a reduced coordinate formulation which uses a set of generalized coordinates equal in number to the degrees of freedom of the system. We used this reduced coordinate formulation to physically simulate a strandbeest that realistically responds to external forces and collisions. Our system can simulate rigid mechanisms and remains stable even with very large time steps. We then placed this strandbeest in a desert to give it an environment to walk through. The desert involves procedurally generated dunes and a sand and skybox shader which features glittering and clouds. Our physics simulator is based on Lagrangian mechanics. Our system was implemented on top of hw4.
 </p>
 
-<h2 align="middle">Technical Approach</h2>
-<h3>Physics Simulation</h3>
+      <img src="img/shaded4.png" align="middle" width="600pt"/>
+      <figcaption>We started from hw4 for rendering and shaders, but did not use any of the physics simulation components.</figcaption>
+
+  d/dt (d/dq' L) - d/dq L = 0
+  L = KE - PE
 <p>
-  We implemented a system for simulating linkages using a reduced coordinate formulation which uses a set of generalized coordinates equal in number to the degrees of freedom of the system. We used this reduced coordinate formulation to physically simulate a strandbeest that realistically responds to external forces and collisions. We then placed this strandbeest in a desert to give it an environment to walk through. The desert involves procedurally generated dunes and a sand and skybox shader which features glittering and clouds. Our physics simulator is based on Lagrangian mechanics. Our system was implemented on top of hw4.
+  In particular, we picked the crankshaft angle as our single generalized coordinate and simulated the beest in a reference frame centered on its center of mass and rotating with the beest. Our system is general to any linkage and requires three things: The linkage definition described as points and joints. a resolution function which takes in generalized coordinates and outputs the positions of enough points to completely determine the system and a resolution order which defines the order in which to calculate the positions of the remaining points. In the future, we hope to automate these latter two processes using graph traversal algorithms, which automatically calculate the remaining degrees of freedom of each point.
 </p>
 
       <img src="img/shaded4.png" align="middle" width="600pt"/>
@@ -143,21 +146,91 @@
 
         Finally, we apply friction by applying a force opposing the velocity of all colliding points. The magnitude of this force is proportional to the collision force but does not depend on the velocity magnitude.
       </p>
+<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<div class="image">
+  <img src="images/wireframe.gif" alt="Video of ">
+  <p><center>Wireframe of a single strandbeest leg</center></p>
+</div>
 <h3>Rigging Body Geometry</h3>
 <p>To give the strandbeest a body, we build 3D geometry over the wireframe of pointmasses and structural springs as spheres and cylinders respectively. Firstly, we defined these two geometries.
     For spheres we adapted what existed in homework 4, turning off collision logic as to not interfere with the underlying point mass representation.
-    On each timestep we edit the sphere position to match their corresponding pointmass. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
+    On each timestep iterate through our point masses, editing their corresponding sphere's position coordinates to match. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
     Then to render them we iterate through our list of structural springs, computing center point, height, and axis from the spring's end pointmasses. Computing center and height were trivial using midpoint and distance formula.
     To compute the axis we employed Rodrigues' rotation formula to transform the base axis of (0, 1, 0) to our desired orientation by deriving the rotation matrix.
-    By composing this rotation matrix along with a scaling transform with height and radius, and translation with center point, in that order, we compute a 3D homogenous matrix to transform the unit cylinder for rendering.
+    By composing a scaling transform with height and radius, the derived rotation matrix, and translation according to center point, in that order, we compute a 3D homogenous matrix to transform the unit cylinder for rendering.
+    <div class="image">
+      <img src="images/rig_mirror.gif" alt="Video of ">
+      <p><center>Rigged wireframe with mirror shader</center></p>
+    </div>
 </p>
 <h3>Terrain</h3>
-<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<p>Our terrain has two primary components: the actual rendered mesh and the shader. The mesh system is composed of a wrapper and main mesh method, in a similar high-level architecture to the sphere. 
+  The mesh generation begins by loading a grayscale heightmap image of the desired terrain. If loading fails, a flat plane is generated.
+  The mesh dimensions are derived from the image dimensions and the desired scale. The mesh is then generated by iterating through each pixel in the image and creating a vertex at the corresponding position in the mesh.
+  Texture coordinates, positions, normals, and tangents are generated, like sphere_drawing in the base hw4 codebase, but the actual process of generating these is significantly more convoluted due to the nature of using an actual mesh instead of a sphere.
+  Face normals are calculated by considering the vertices of adjacent triangles, and then vertex normals are computed by accumulating face normals. Tangents are computed using UV mapping and the method of finite differences to approximate the derivative of the heightmap.
+  A collision method is implemented to allow for the strandbeest to interact with the terrain. 
+  The particularly tricky part of this is unlike the sphere or plane, the terrain is not mathematically defined, so we have to identify teh closest vertices to the strandbeest's feet and calculate the normal of the terrain at that point.
+  This is done by calculating the relative position of the points, using the terrain dimensions as our reference frame. From this, we can use this position as coordinates to index into our array of vertices.
+  We can extract the 3 vertices the collision point is between and then compute the offset from the plane to the collision point. If the offset is within a certain threshold, we can consider the strandbeest to be on the terrain.
+  We apply an offset to the strandbeest's position to ensure it is above the terrain and not clipping through it. This collision method also works nicely with the cloth, which is how we did our initial testing.
+  <br/>
+  <div class="image-row-centered">
+    <div class="image">
+        <img src="images/terrain/texture fall.gif" alt="A demo of the terrain and collisions using the basic texture mapping shader for visibility">
+        <p><center>A demo of the terrain and collisions using the basic texture mapping shader for visibility</center></p>
+    </div>
+  </div>  
+
+  The shader is quite a bit more complicated than the base phong shader from hw4. We intended to try to replicate the sand from games such as Journey, Battlefield 2042, and others. 
+  The core hallmarks of these were larger scale perturbations in the sand (ripples) as well as the characteristic shimmer that sand has in the sun. 
+  It features bump mapping to simulate surface irregularities and the ripples.
+  In addition, Perlin noise is utilized to generate further perturbations in the sand akin to ripples.
+  Sparkles are generated by perturbing normals based on a noise function, with a lot of work put in to attempt to minimize moire patterns.
+  <br/>
+  <div class="image-row-centered">
+    <div class="image">
+        <img src="images/terrain/sand test cloth fall.gif" alt="A demo of the sand shader">
+        <p><center>A demo of the sand shader and the terrain interacting with the cloth</center></p>
+    </div>
+  </div> 
+
+  A fair few challenges were encountered in getting the terrain functional. Scaling the mesh was less than trivial as it created havoc with the collision detection and the vertices.
+  However, an even bigger challenge was the shader. The shader was a massive undertaking, with a lot of time spent on it. The iteration the we have now is the 5th or 6th iteration of the shader, with the previous ones being scrapped due to various issues.
+  In particular, we ran into issues with the sparkles causing obscene amounts of moire patterns and other undesirable artifacts. This required a lot of trial and error with various noise functions with different parameters.
+  The ripples also proved to be a massive challenge, particularly with trying to get small scale ripples to work. 
+  This is something that we still want to improve on as while we're happy with the large scale perturbations, the small scale ripples are very hard to see, despite having gone through a lot of iterations (at least a week's worth of work).
+  We also had to drop our stretch plan of adding in "footsteps" into the shader, due in part to technical limitations imposed by the fairly narrow scope of the hw4 codebase. 
+  In particular, we struggled to both accurately keep track of steps in a manner that would be performant with the fragment shader, which must be able to efficiently identify if a step has been taken on a given pixel.
+  A preliminary version of this was implemented (multiple times), but we were never abler to get it to function with enough performance. Engines like unity and unreal have much more sophisticated systems for this, but we were unable to replicate this in our shader.
+  <br/>
+  <br/>
+  We are, all in all, quite happy with the shader. It's not perfect, but it's a good start and we're proud of what we've accomplished. We're particularly happy with the large scale perturbations and the shimmer, which we feel are quite close to what we were aiming for.
+  Had we had the additional scope to add self-shadowing, we think the terrain would be rather convincing.
+  <div class="image-row-centered">
+    <div class="image">
+        <img src="images/terrain/test env video.gif" alt="Our test environment with the sand shader, dune mesh, an old version of the sky shader, and a demo strandbeest leg">
+        <p><center>Our test environment with the sand shader, dune mesh, an old version of the sky shader, and a demo strandbeest leg</center></p>
+    </div>
+  </div> 
+
+</p>
 
 <h3>Sky/Atmospherics</h3>
-<p>We generated a sky using a shader projected onto a Cubemap. We for the blue sky we created a gradient between two shades of blue to 
-    render a realistic sky, for the sun we rendered a circle at a point in world space, then displayed it according to the norm between the camera position and the suns posiiton, then checkinig the dot product between the camera's position and the suns position to determine if the sun is visible.
-    We generated clouds using a Perlin noise function to generate a 2D texture, then used a Fractal Brownian Motion function to combine layers of noise to create a cloud texture. We then caluclated the direction of the ray and the distance and generated a color based on these.
+<p>
+    We implemented a sky rendering system using shaders and Cubemaps. To achieve a realistic depiction of the sky, we employed a gradient between two shades of blue. This gradient blends together, mimicking the color of the sky in real life.
+    <br/>
+    <br/>
+  
+    For the sun, we implemented a dynamic rendering approach. A circular element is positioned in world space and adjusted dynamically based on the camera's perspective. This ensures proper alignment with the viewer's line of sight, making the sun appear fixed in the sky. By evaluating the dot product between the camera's position and the sun's direction, we determine when the sun is visible, allowing for realistic lighting effects.
+    <br/>
+    <br/>
+  
+    Our cloud generation method utilizes Perlin noise, a technique for creating natural-looking textures. We apply Fractal Brownian Motion, stacking multiple layers of noise to create pseudorandom and realistic cloud patterns. This process results in detailed and realistic cloud and fog formations in the sky.
+    <br/>
+    <br/>
+  
+    Additionally, the scene rendering incorporates ray marching techniques to simulate atmospheric effects and depth. By iteratively advancing along the ray direction and evaluating the scene function, we generate the final color output. This approach enables the simulation of complex atmospheric interactions, contributing to the overall realism of the sky rendering.
 </p>
 <h2 align="middle">Results</h2>
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
@@ -167,17 +240,18 @@
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
 
 <h2 align="middle">References</h2>
-1. <a href="https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula">Rodrigues' Rotation Formula</a>
+1. <a href="https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula">Rodrigues' Rotation Formula</a><br>
+2. <a href="https://en.wikipedia.org/wiki/Perlin_noise">Perlin Noise</a><br>
+3. <a href="https://www.alanzucconi.com/2019/10/08/journey-sand-shader-1/">Journey Sand Shader</a><br>
 
 <h2 align="middle">Individual Contributions</h2>
+<h3>Derek</h3>
+<p>Implemented the reduced-coordinate physics simulation using Lagrangian mechanics and collision detection and response. Also added the glow around the sun.</p>
 <h3>Marcus</h3>
 <p>Implemented the rigging of the strandbeest wireframe with 3D geometry and homogenous transformation algorithm to correctly build the cylinder according to given placement coordinate, height, radius, and axis params.</p>
-<h3>Derek</h3>
-<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 <h3>Pranav</h3>
-<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<p>Implemented the terrain mesh builder as well as the accompanying shader. Also contributed to the final sky shader (and had created quite a few previous versions that were scrapped).</p>
 <h3>Rohan</h3>
-<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<p>Implemented cylinders, as well as contributed to the sky shader and sun.</p>
 </body>
->>>>>>> 524c6b79411694dc2a350cd0cdafffe950915875
 </html>
