@@ -14,8 +14,87 @@
   h1, h2, h3, h4 {
     font-family: 'Source Sans Pro', sans-serif;
   }
+  .image-row {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            margin-bottom: 40px;
+        }
+
+  .image-row-centered {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      justify-content: center;
+  }
+
+  .image {
+      flex: 0 0 calc(50% - 20px);
+      margin-top: 10px;
+      margin-right: 20px;
+      margin-left: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+  }
+
+  .image img {
+      max-width: 100%;
+      height: auto;
+      margin-top: 20px;
+      border: 6px solid #535353; /* Add a border to make it clear it's an image */
+  }
+
+  .image h3 {
+      font-size: 18px;
+      margin-top: 10px;
+      margin-bottom: 0px;
+  }
+
+  .image h4 {
+      font-size: 16px;
+      margin-top: 10px;
+      margin-bottom: 0px;
+      text-align: center;
+  }
+
+  .image p {
+      font-size: 14px;
+  }
+
+  .gif-image {
+      flex: 0 0 calc(50% - 20px);
+      margin-top: 10px;
+      margin-right: 20px;
+      margin-left: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+  }
+
+  .gif-image img {
+      width: 100%;
+      height: auto;
+      margin-top: 20px;
+      border: 6px solid #535353; /* Add a border to make it clear it's an image */
+      border-radius: 4px; /* Optional: Rounded corners for aesthetics */
+  }
+
+  .gif-image h3 {
+      font-size: 18px;
+      margin-top: 10px;
+      margin-bottom: 0px;
+  }
+
+  .gif-image p {
+      font-size: 14px;
+      text-align: center;
+  }
 </style>
-<title>CS 184 Final Project Proposal</title>
+<title>CS 184: Strandbeest Simulation</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
 </head>
@@ -25,7 +104,7 @@
 
 <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2024</h1>
 <h1 align="middle">Final Project Report: Strandbeest Simulation</h1>
-<h2 align="middle">Marcus Cheung, Derek Guo, Pranav Kolluri, Rohan</h2>
+<h2 align="middle">Derek Guo, Pranav Kolluri, Rohan Agrawal, Marcus Cheung</h2>
 
 <br><br>
 
@@ -45,7 +124,10 @@
     On each timestep we edit the sphere position to match their corresponding pointmass. For the leg structures we had to implement a new shape, cylinders. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
     
 </p>
-<h3>Environment</h3>
+<h3>Terrain</h3>
+<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+
+<h3>Sky/Atmospherics</h3>
 <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 <h2 align="middle">Results</h2>
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
