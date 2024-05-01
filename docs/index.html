@@ -107,6 +107,7 @@
 <h2 align="middle">Derek Guo, Marcus Cheung, Pranav Kolluri, Rohan Agrawal</h2>
 
 <br><br>
+<iframe align='middle' display="block" width="560" height="315" src="https://www.youtube.com/embed/PgYoOI-d0kQ?si=lcJL-BD5la8Nx04O" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 <div>
 
@@ -119,7 +120,7 @@
 <h3>Physics Simulation</h3>
 <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 <div class="image">
-  <img src="images/wireframe.gif" alt="Video of ">
+  <img src="images/wireframe.gif" alt="Video of strandbeest wireframe">
   <p><center>Wireframe of a single strandbeest leg</center></p>
 </div>
 <h3>Rigging Body Geometry</h3>
@@ -130,7 +131,7 @@
     To compute the axis we employed Rodrigues' rotation formula to transform the base axis of (0, 1, 0) to our desired orientation by deriving the rotation matrix.
     By composing a scaling transform with height and radius, the derived rotation matrix, and translation according to center point, in that order, we compute a 3D homogenous matrix to transform the unit cylinder for rendering.
     <div class="image">
-      <img src="images/rig_mirror.gif" alt="Video of ">
+      <img src="images/rig_mirror.gif" alt="Video of rigged wireframe">
       <p><center>Rigged wireframe with mirror shader</center></p>
     </div>
 </p>
@@ -202,7 +203,9 @@
     <br/>
   
     Additionally, the scene rendering incorporates ray marching techniques to simulate atmospheric effects and depth. By iteratively advancing along the ray direction and evaluating the scene function, we generate the final color output. This approach enables the simulation of complex atmospheric interactions, contributing to the overall realism of the sky rendering.
-</p>
+    <img src="images/sky_scene" alt="Our test environment with the sand shader, dune mesh, an a sky shader with a radiant sun and clouds">
+
+  </p>
 <h2 align="middle">Results</h2>
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
