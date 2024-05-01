@@ -12,7 +12,7 @@ typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ma
 class Jansen {
 public:
   // only 1 coord because extrinsic translation and rotation are handled specially
-  constexpr static int nLegs = 4;
+  constexpr static int nLegs = 5;
   constexpr static int nCoords = 1;
   constexpr static int nPoints = nLegs * 14;
 

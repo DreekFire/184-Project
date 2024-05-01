@@ -13,6 +13,8 @@
 #define TANGEN_OFFSET 8
 #define VERTEX_SIZE 11
 
+#define M_PI 3.14159265358979323846
+
 
 using namespace nanogui;
 
@@ -142,54 +144,8 @@ void CylinderMesh::build_data() {
 }
 
 void CylinderMesh::draw_cylinder(GLShader &shader, const Vector3D &axis, const Vector3D &p, double r, double h) {
-    // std::cout << "axis: " << axis << std::endl; 
-    // std::cout << "position: " << p << std::endl;
-    // Vector3D z_axis = axis.unit();
-    // Vector3D x_axis = cross(Vector3D(0, 1, 0), z_axis).unit();
-    // Vector3D y_axis = cross(z_axis, x_axis).unit();
-    /*std::cout << "x_axis: " << x_axis << std::endl;
-    std::cout << "y_axis: " << y_axis << std::endl;
-    std::cout << "z_axis: " << z_axis << std::endl; */
-
     Matrix4f model;
-
-    //Matrix4f rotate;
-    //Eigen::Vector3d y_axis(0, 1, 0);
-
-    //Eigen::Vector3d a;
-    //a << -axis.x, axis.y, axis.z;
-
-    //// Find the angle between v and y-axis
-    //double cos_theta = a.dot(y_axis) / (a.norm() * y_axis.norm());
-    //double theta = acos(cos_theta);
-
-    //// Find the rotation axis
-    //Eigen::Vector3d k = a.cross(y_axis).normalized();
-
-    //// Skew-symmetric matrix representation of the rotation axis
-    //Eigen::Matrix3d K;
-    //K << 0, -k.z(), k.y(),
-    //     k.z(), 0, -k.x(),
-    //     -k.y(), k.x(), 0;
-
-    //// Construct the rotation matrix using Rodrigues' rotation formula
-    //Eigen::Matrix3d R = Eigen::Matrix3d::Identity() 
-    //                  + sin(theta) * K 
-    //                  + (1 - cos(theta)) * (K * K);
-
-    //rotate << R(0, 0), R(0, 1), R(0, 2), 0,
-    //    R(1, 0), R(1, 1), R(1, 2), 0,
-    //    R(2, 0), R(2, 1), R(2, 2), 0,
-    //    0, 0, 0, 1;
-
-    //Matrix4f translate;
-
-    //translate << 1, 0, 0, p.x,
-    //    0, 1, 0, p.y,
-    //    0, 0, 1, p.z,
-    //    0, 0, 0, 1;
-
-    //model = translate * rotate * scale;
+    model.setZero();
 
     Eigen::Vector3f y(axis.x, axis.y, axis.z);
     y.normalize();
@@ -202,18 +158,6 @@ void CylinderMesh::draw_cylinder(GLShader &shader, const Vector3D &axis, const V
     model.block<3, 1>(0, 2) = r * z;
     model.block<3, 1>(0, 3) = Eigen::Vector3f(p.x, p.y, p.z);
     model(3, 3) = 1;
-
-    /*std::cout << "Translate:" << std::endl
-              << translate << std::endl;
-
-    std::cout << "Scale:" << std::endl
-    << scale << std::endl;
-
-    std::cout << "Model Matrix:" << std::endl
-              << model << std::endl;*/
-
-    // scale the cylinder by the height
-    // model(1, 1) *= h * 100;
 
     shader.setUniform("u_model", model);
 

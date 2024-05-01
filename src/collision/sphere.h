@@ -10,7 +10,7 @@ using namespace std;
 
 struct Sphere : public CollisionObject {
 public:
-  Sphere(const Vector3D &origin, double radius, double friction, int num_lat = 4, int num_lon = 4)
+  Sphere(const Vector3D &origin, double radius, double friction, int num_lat = 8, int num_lon = 8)
       : origin(origin), radius(radius), radius2(radius * radius),
         friction(friction), m_sphere_mesh(Misc::SphereMesh(num_lat, num_lon)) {}
 

@@ -16,10 +16,7 @@ void main() {
   float k_d = 1.0;
 
   // arbitrary ambient coefficient
-  float k_a = 1.0;
-
-  // arbitrary ambient intensity
-  vec4 I_a = vec4(0.1, 0.1, 0.1, 0);
+  float k_a = 0.3;
 
   // arbitrary specular coefficient
   float k_s = 0.5;
@@ -47,7 +44,7 @@ void main() {
   vec4 I_r2 = vec4(u_light_intensity, 0) / (r * r);
 
   // apply the phong model
-  out_color = (k_a * I_a) + (k_d * I_r2 * u_color * cos_theta_nl) + (k_s * I_r2 * u_color * pow(cos_theta_nh, p));
+  out_color = (k_a * u_color) + (k_d * I_r2 * u_color * cos_theta_nl) + (k_s * I_r2 * u_color * pow(cos_theta_nh, p));
 
   out_color.a = 1;
 }

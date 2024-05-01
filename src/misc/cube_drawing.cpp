@@ -14,14 +14,12 @@
 
 using namespace nanogui;
 
-
 namespace CGL {
     namespace Misc {
         CubeMesh::CubeMesh(int size) {
             generate_cube();
             build_data();
         }
-
 
         void CubeMesh::generate_cube() {
             // Cube vertices
@@ -36,6 +34,20 @@ namespace CGL {
                  0.5, -0.5, -0.5, // Vertex 5
                  0.5,  0.5, -0.5, // Vertex 6
                 -0.5,  0.5, -0.5  // Vertex 7
+            };
+
+            // Texture coordinates (for mapping the single skybox texture)
+            TexCoords = {
+                // Front face
+                0.0, 0.0, // Vertex 0
+                1.0, 0.0, // Vertex 1
+                1.0, 1.0, // Vertex 2
+                0.0, 1.0, // Vertex 3
+                // Back face
+                0.0, 0.0, // Vertex 4
+                1.0, 0.0, // Vertex 5
+                1.0, 1.0, // Vertex 6
+                0.0, 1.0  // Vertex 7
             };
 
             // Cube indices (triangles)
@@ -62,9 +74,9 @@ namespace CGL {
         }
 
         void CubeMesh::build_data() {
-
             positions = MatrixXf(4, Indices.size() * 3);
             normals = MatrixXf(4, Indices.size() * 3);
+            texcoords = MatrixXf(2, Indices.size() * 3);
 
             for (size_t i = 0; i < Indices.size(); i += 3) {
                 unsigned int i1 = Indices[i];
@@ -80,9 +92,9 @@ namespace CGL {
                 for (int j = 0; j < 3; j++) {
                     positions.col(i * 3 + j) << Vertices[Indices[i + j] * VERTEX_SIZE], Vertices[Indices[i + j] * VERTEX_SIZE + 1], Vertices[Indices[i + j] * VERTEX_SIZE + 2], 1.0;
                     normals.col(i * 3 + j) << normal.x, normal.y, normal.z, 0.0;
+                    texcoords.col(i * 3 + j) << TexCoords[Indices[i + j] * 2], TexCoords[Indices[i + j] * 2 + 1];
                 }
             }
-
         }
 
         void CubeMesh::draw_cube(GLShader& shader, const Vector3D& p, double size) {
@@ -95,12 +107,10 @@ namespace CGL {
             shader.setUniform("u_model", model);
 
             shader.uploadAttrib("in_position", positions);
-            if (shader.attrib("in_normal", false) != -1) {
-                shader.uploadAttrib("in_normal", normals);
-            }
+            //shader.uploadAttrib("in_normal", normals);
+            //shader.uploadAttrib("in_texcoord", texcoords);  // Upload texture coordinates
 
             shader.drawArray(GL_TRIANGLES, 0, Indices.size() * 3);
         }
-
     } // namespace Misc
 } // namespace CGL

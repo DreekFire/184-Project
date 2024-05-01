@@ -74,18 +74,32 @@ void ClothSimulator::load_textures() {
   glGenTextures(1, &m_gl_texture_4);
   glGenTextures(1, &m_gl_ripples);
   glGenTextures(1, &m_gl_cubemap_tex);
+  glGenTextures(1, &m_gl_skybox_posx);
+  glGenTextures(1, &m_gl_skybox_negx);
+  glGenTextures(1, &m_gl_skybox_posy);
+  glGenTextures(1, &m_gl_skybox_negy);
+  glGenTextures(1, &m_gl_skybox_posz);
+  glGenTextures(1, &m_gl_skybox_negz);
   
   m_gl_texture_1_size = load_texture(1, m_gl_texture_1, (m_project_root + "/textures/texture_1.png").c_str());
   m_gl_texture_2_size = load_texture(2, m_gl_texture_2, (m_project_root + "/textures/texture_2.png").c_str());
   m_gl_texture_3_size = load_texture(3, m_gl_texture_3, (m_project_root + "/textures/texture_3.png").c_str());
   m_gl_texture_4_size = load_texture(4, m_gl_texture_4, (m_project_root + "/textures/texture_4.png").c_str());
   m_gl_ripples_size = load_texture(0, m_gl_ripples, (m_project_root + "/textures/ripples.jpg").c_str());
+  m_gl_skybox_posx_size = load_texture(0, m_gl_skybox_posx, (m_project_root + "/textures/cube/posx.jpg").c_str());
+  m_gl_skybox_negx_size = load_texture(0, m_gl_skybox_negx, (m_project_root + "/textures/cube/negx.jpg").c_str());
+  m_gl_skybox_posy_size = load_texture(0, m_gl_skybox_posy, (m_project_root + "/textures/cube/posy.jpg").c_str());
+  m_gl_skybox_negy_size = load_texture(0, m_gl_skybox_negy, (m_project_root + "/textures/cube/negy.jpg").c_str());
+  m_gl_skybox_posz_size = load_texture(0, m_gl_skybox_posz, (m_project_root + "/textures/cube/posz.jpg").c_str());
+  m_gl_skybox_negz_size = load_texture(0, m_gl_skybox_negz, (m_project_root + "/textures/cube/negz.jpg").c_str());
+
   
   std::cout << "Texture 1 loaded with size: " << m_gl_texture_1_size << std::endl;
   std::cout << "Texture 2 loaded with size: " << m_gl_texture_2_size << std::endl;
   std::cout << "Texture 3 loaded with size: " << m_gl_texture_3_size << std::endl;
   std::cout << "Texture 4 loaded with size: " << m_gl_texture_4_size << std::endl;
   std::cout << "Ripples loaded with size: " << m_gl_ripples_size << std::endl;
+  std::cout << "Skybox loaded with size: " << m_gl_skybox_negx_size << std::endl;
   
   std::vector<std::string> cubemap_fnames = {
     m_project_root + "/textures/cube/posx.jpg",
@@ -278,21 +292,21 @@ void ClothSimulator::drawContents() {
     }
   }
 
-  /*for (auto leg : cloth->beest.cs) {
+  for (auto leg : cloth->beest.cs) {
     leg.render(shader);
   }
   for (auto sphere : cloth->beest.spheres) {
     sphere.render(shader);
-  }*/
+  }
   shader.setUniform("u_model", model);
 
   switch (active_shader.type_hint) {
   case WIREFRAME:
-    drawWireframe(shader);
+    // drawWireframe(shader);
     drawBeestWireframe(shader);
     break;
   case NORMALS:
-    drawNormals(shader);
+    // drawNormals(shader);
     break;
   case PHONG:
     // Others
@@ -314,7 +328,7 @@ void ClothSimulator::drawContents() {
     shader.setUniform("u_height_scaling", m_height_scaling, false);
     
     shader.setUniform("u_texture_cubemap", 5, false);
-    drawPhong(shader);
+    // drawPhong(shader);
     break;
   }
 
@@ -329,17 +343,29 @@ void ClothSimulator::drawContents() {
               skyShader.setUniform("u_model", model);
               skyShader.setUniform("u_view_projection", viewProjection);
               // send the sun position to the shader and the sun color
-              skyShader.setUniform("u_sun_position", Vector3f(150, 500, -700), false);
-              skyShader.setUniform("u_sun_color", Vector3f(1, 1, 1), false);
+              skyShader.setUniform("u_sun_position", Vector3f(0, 0.5, 0), false);
+              skyShader.setUniform("u_sun_color", Vector3f(255, 255, 0), false);
               // send all the other uniforms needed for the sky shader
               Vector3D cam_pos = camera.position();
               skyShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
+              Vector3D cam_target = camera.view_point();
+              skyShader.setUniform("u_cam_target", Vector3f(cam_target.x, cam_target.y, cam_target.z), false);
               // grab the time and send it to the shader
               // this is used to animate the sky
               skyShader.setUniform("u_time", (float)glfwGetTime(), false);
               // grab the screen size and send it to the shader as a vec2   
               skyShader.setUniform("u_resolution", Vector2f(screen_w, screen_h), false);
-              // disable the depth test so the sky is always rendered, render the sky and enable the depth test again
+              // dump the skybox textures into the shader
+              skyShader.setUniform("u_texture_posx", 5, false);
+              skyShader.setUniform("u_texture_negx", 6, false);
+              skyShader.setUniform("u_texture_posy", 7, false);
+              skyShader.setUniform("u_texture_negy", 8, false);
+              skyShader.setUniform("u_texture_posz", 9, false);
+              skyShader.setUniform("u_texture_negz", 10, false);
+              // dump the skybox sizes into the shader
+              // this is used to scale the skybox
+              // so it fits the screen
+              skyShader.setUniform("u_texture_size", Vector2f(m_gl_skybox_posx_size.x, m_gl_skybox_posx_size.y), false);
               co->render(skyShader);
               // skip the rest of the code for this object
               continue;
@@ -363,6 +389,7 @@ void ClothSimulator::drawContents() {
               sandShader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
               sandShader.setUniform("u_texture_4_size", Vector2f(m_gl_texture_4_size.x, m_gl_texture_4_size.y), false);
               sandShader.setUniform("u_ripples_size", Vector2f(m_gl_ripples_size.x, m_gl_ripples_size.y), false);
+              sandShader.setUniform("u_view_projection", viewProjection);
               // Textures
               sandShader.setUniform("u_texture_1", 1, false);
               sandShader.setUniform("u_texture_2", 2, false);

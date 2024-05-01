@@ -46,7 +46,7 @@ struct ClothParameters {
 };
 
 struct Beest {
-  Beest() : scale(0.4) {}
+  Beest() : scale(1) {}
   Beest(float scale) : scale(scale) {}
   ~Beest();
   void addTube();

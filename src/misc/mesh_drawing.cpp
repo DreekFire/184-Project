@@ -43,8 +43,8 @@ namespace CGL {
                 width = height = 512;
                 image_data = new unsigned char[width * height];
                 for (int i = 0; i < width * height; ++i) {
-					image_data[i] = 0;
-				}
+					          image_data[i] = 0;
+				        }
             }
 
 
@@ -91,10 +91,10 @@ namespace CGL {
             double center_height = center_vertex[VERTEX_OFFSET + 1];
             for (int y = 0; y < side_length; ++y) {
                 for (int x = 0; x < side_length; ++x) {
-					double* vptr = &vertices[VERTEX_SIZE * (y * side_length + x)];
-					vptr[VERTEX_OFFSET + 1] -= center_height;
-				}
-			}
+					          double* vptr = &vertices[VERTEX_SIZE * (y * side_length + x)];
+					          vptr[VERTEX_OFFSET + 1] -= center_height;
+				        }
+			      }
             
 
             width = height = side_length;
@@ -165,7 +165,7 @@ namespace CGL {
                 vertexNormals[i].normalize();
             // Similarly, normalize tangents
             for (size_t i = 0; i < vertexTangents.size(); ++i)
-				vertexTangents[i].normalize();
+				        vertexTangents[i].normalize();
 
             // Populate matrices
             for (size_t i = 0; i < indices.size(); i += 3) {
@@ -202,7 +202,7 @@ namespace CGL {
         void MeshDrawing::collide(PointMass& pm) {
             // pm has a position and a last_position
             // use the last position to detect collisions
-			// find the closest point on the mesh to the point mass
+			      // find the closest point on the mesh to the point mass
             // it should be the triangle underneath the point mass
             // no looping since that would be too slow
             Vector3D closest_point;
@@ -226,10 +226,10 @@ namespace CGL {
             double* vPtr3 = &vertices[VERTEX_SIZE * (y1 * width + x1 + 1)];
 
             if (!half) {
-              // keep triangle order (probably fine but just in case)
-              double* temp = vPtr2;
-              vPtr2 = vPtr3;
-              vPtr3 = temp;
+                // keep triangle order (probably fine but just in case)
+                double* temp = vPtr2;
+                vPtr2 = vPtr3;
+                vPtr3 = temp;
             }
 
             Vector3D p1(vPtr1[VERTEX_OFFSET], vPtr1[VERTEX_OFFSET + 1], vPtr1[VERTEX_OFFSET + 2]);
@@ -237,35 +237,21 @@ namespace CGL {
             Vector3D p3(vPtr3[VERTEX_OFFSET], vPtr3[VERTEX_OFFSET + 1], vPtr3[VERTEX_OFFSET + 2]);
 
             // todo: use normal vector for collision
-            Vector3D normal = cross(p3 - p1, p2 - p1);
+            Vector3D normal = cross(p3 - p1, p2 - p1).unit();
 
-            double offset = dot(pm.position - p1, normal);
+            double offset = dot(pm.position - p1, normal) - 0.07;
             if (offset < 0) {
               pm.position -= offset * normal;
             }
 
-            // find the closest point on the triangle to the point mass
-         //   if (x2 + y2 < 1) {
-				     // closest_point = p1 + x2 * (p3 - p1) + y2 * (p2 - p1);
-			      //}
-         //   else {
-				     // closest_point = p3 + (1 - x2) * (p2 - p3) + (1 - y2) * (p1 - p3);
-			      //}
-         //   // if the point mass is below the mesh, move it to the closest point on the mesh
-         //   if (pm.position.y <= closest_point.y + 0.001) {
-         //       // pm.last_position = pm.position;
-         //       pm.position = closest_point;
-         //       // add adjustment factor to keep the point mass on the surface
-         //       pm.position.y += 0.001;
-         //   }
         }
 
         void MeshDrawing::drawMesh(GLShader& shader, const Vector3D& position, float scale) {
             Matrix4f model;
             model << scale, 0, 0, position.x,
-				0, scale, 0, position.y,
-				0, 0, scale, position.z,
-				0, 0, 0, 1;
+				             0, scale, 0, position.y,
+				             0, 0, scale, position.z,
+				             0, 0, 0, 1;
 
             shader.setUniform("u_model", model);
 

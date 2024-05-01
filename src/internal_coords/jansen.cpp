@@ -66,9 +66,9 @@ void Jansen::resolve() {
 
   int pPerSet = 14;
   float spacing = 6.0f;
-  float scaling = 0.25f;
+  float scaling = 0.1f;
   for (int l = 0; l < nLegs; l++) {
-    float qEff = q(0) + 2 * PI / nLegs * l;
+    float qEff = q(0) + 4 * PI / nLegs * l;
     pos.col(pPerSet * l) = Eigen::Vector3f(0, 0, spacing * l);
     pos.col(pPerSet * l + 1) = Eigen::Vector3f(1.5 * cosf(qEff), 1.5 * sinf(qEff), spacing * l);
     dpdq.block<3, 1>(3 * pPerSet * l + 3, 0) = Eigen::Vector3f(-1.5 * sinf(qEff), 1.5 * cosf(qEff), 0);

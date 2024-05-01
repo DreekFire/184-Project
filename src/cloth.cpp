@@ -30,13 +30,13 @@ void Beest::buildBeest() {
   ss.reserve((22 + 3) * Jansen::nLegs - 3);
   for (int i = 0; i < Jansen::nPoints; i++) {
     pms.push_back(PointMass(Vector3D(0), false));
-    spheres.push_back(Sphere(Vector3D(0), 0.01, 0));
+    spheres.push_back(Sphere(Vector3D(0), 0.007, 0));
   }
 
   legModel = Jansen(
     Eigen::Matrix<float, Jansen::nCoords, 1>( 0 ),
     Eigen::Matrix<float, Jansen::nCoords, 1>( 0 ),
-    Eigen::Vector3f(0.0f, 7.0f, 0.0f),
+    Eigen::Vector3f(0.0f, 2.0f, 0.0f),
     Eigen::Matrix3f::Identity()
   );
 
@@ -147,10 +147,9 @@ Cloth::~Cloth() {
   }
 }
 void Cloth::buildGrid() {
-  beest = Beest(0.1);
-  beest.buildBeest();
-  // TODO (Part 1): Build a grid of masses and springs.
-    
+    beest = Beest(0.1);
+    beest.buildBeest();
+    // TODO (Part 1): Build a grid of masses and springs.
     for (int i = 0; i < num_height_points; i++) {
         for (int j = 0; j < num_width_points; j++) {
             bool isPinned = false;
