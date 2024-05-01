@@ -119,7 +119,9 @@
 <h3>Physics Simulation</h3>
 <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 <h3>Body Geometry</h3>
-<p>To give the strandbeest a body, we build 3D geometry over the wireframe of pointmasses and structural springs as spheres and cylinders respectively. Firstly, we defined these two geometries.
+<p>To give the strandbeest a body, we build 3D geometry over the wireframe of pointmasses and structural springs as spheres and cylinders respectively. To create the frame of the structure we used cylinders, which were a custom object we created 
+    by defining a new class of objects defined by their axis, center, height, and radius. 
+    Firstly, we defined these two geometries.
     For spheres we adapted what existed in homework 4, turning off collision logic as to not interfere with the underlying point mass representation.
     On each timestep we edit the sphere position to match their corresponding pointmass. For the leg structures we had to implement a new shape, cylinders. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
     Then to render them we iterate through our list of structural springs, computing center point, height, and axis from the spring's end pointmasses. Computing center and height were trivial. To compute the axis we employed Rodrigues' rotation formula to transform the starting axis of (0, 1, 0) to our desired orientation.
@@ -128,7 +130,10 @@
 <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 
 <h3>Sky/Atmospherics</h3>
-<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<p>We generated a sky using a shader projected onto a Cubemap. We for the blue sky we created a gradient between two shades of blue to 
+    render a realistic sky, for the sun we rendered a circle at a point in world space, then displayed it according to the norm between the camera position and the suns posiiton, then checkinig the dot product between the camera's position and the suns position to determine if the sun is visible.
+    We generated clouds using a Perlin noise function to generate a 2D texture, then used a Fractal Brownian Motion function to combine layers of noise to create a cloud texture. We then caluclated the direction of the ray and the distance and generated a color based on these.
+</p>
 <h2 align="middle">Results</h2>
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
