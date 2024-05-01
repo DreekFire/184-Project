@@ -1,6 +1,17 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+  </script>
+  <script id="MathJax-script" async=async
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+  </script>
 <style>
   body {
     padding: 100px;
@@ -11,7 +22,7 @@
     font-family: 'Open Sans', sans-serif;
     color: #121212;
   }
-  h1, h2, h3, h4 {
+  h1, h1, h3, h4 {
     font-family: 'Source Sans Pro', sans-serif;
   }
   .image-row {
@@ -104,21 +115,69 @@
 
 <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2024</h1>
 <h1 align="middle">Final Project Report: Strandbeest Simulation</h1>
-<h2 align="middle">Derek Guo, Marcus Cheung, Pranav Kolluri, Rohan Agrawal</h2>
+<h1 align="middle">Derek Guo, Marcus Cheung, Pranav Kolluri, Rohan Agrawal</h1>
 
 <br><br>
-<iframe align='middle' display="block" width="560" height="315" src="https://www.youtube.com/embed/PgYoOI-d0kQ?si=lcJL-BD5la8Nx04O" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe style="display: block; margin: 0 auto;" width="560" height="315" src="https://www.youtube.com/embed/PgYoOI-d0kQ?si=lcJL-BD5la8Nx04O" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 <div>
 
-<h2 align="middle">Abstract</h2>
+<h1 align="middle">Abstract</h1>
 <p>
-  We created a simulation of a <a href="https://www.strandbeest.com/">strandbeest</a> walking along a beach. We primarily focused on simulating the physical joints of the strandbeest, rigging of our model, and the visual rendering of the sand and sky.
+  We created a simulation of a <a href="https://www.strandbeest.com/">strandbeest</a> walking through a desert. 
+  A Strandbeest, resembling a mechanical animal, is a kinetic sculpture propelled by the wind, mimicking the motion of walking.
+  It's sets of legs are all mechanically interlinked in a rather pleasing motion, and we sought to recreate this.
+  We primarily focused on simulating the physical joints of the strandbeest, rigging of our model, the creation of a terrain to walk in, and the visual rendering of the sand and sky.
+  The strandbeest is a complex mechanical structure that walks by using the wind to power its legs. Our simulation utilizes a reduced-coordinate physics simulation, allowing for the simulation of rigid systems with the added benefit of remaining stable even with large time steps.
+  This avoids the issues seen in games like KSP and Space Engineers with their spring-based physics systems where the physics can become unstable and cause the simulation to explode.
+  We also implemented a terrain system that allows the strandbeest to walk on a realistic sand dune. The terrain is generated from a heightmap and uses a complex shader to simulate the sand and the shimmering effect that sand has in the sun.
+  The sky is also rendered using a shader, with a gradient between two shades of blue, a dynamic sun, and clouds generated using Perlin noise. The scene rendering incorporates ray marching techniques to simulate atmospheric effects and depth.
+  This project was very wide in scope, with each individual element being quite complex. We are quite happy with the results given our starting codebase and timeframe, but there is still a lot of room for improvement.
 </p>
 
-<h2 align="middle">Technical Approach</h2>
+<h1 align="middle">Technical Approach</h1>
 <h3>Physics Simulation</h3>
-<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<p>
+  We implemented a system for simulating linkages using a reduced coordinate formulation, which uses a set of generalized coordinates equal in number to the degrees of freedom of the system. We used this reduced coordinate formulation with Lagrangian mechanics to physically simulate a strandbeest that realistically responds to external forces and collisions. Our system can simulate stiff joints and remains very stable even with very large time steps. In order to give it an environment to walk through, we created a desert environment using procedurally generated dunes and a sand and skybox shader which features glittering, sun, and clouds. Our system was implemented on top of hw4.
+</p>
+
+<img src="images/shaded4.png" align="middle" width="600pt" />
+<figcaption>We started from hw4 for rendering and shaders, but did not use any of the physics simulation components.</figcaption>
+
+\frac{d}{dt}
+ (d/dq' L) - d/dq L = 0
+L = KE - PE
+<p>
+  We picked the crankshaft angle as our single internal generalized coordinate with translation and rotation as external coordinates and simulated the beest in a reference frame centered on its center of mass and rotating with the beest. Our system requires a resolution function $\vec{p}(\vec{q})$ which takes in generalized coordinates and outputs the position of each point, as well as its derivatives $\frac{d\vec{p}}{d\vec{q}}$ and $\frac{d}{d t} \frac{d\vec{p}}{d\vec{q}}$. We further implemented a system to automatically find $p(q)$ and its relevant derivatives for any linkage, which requires us to only define $p(q)$ and its derivatives for just enough points to fully determine the system and a resolution order which specifies the order in which to calculate the positions of the remaining points. In the future, we hope to automate even these latter two processes using graph traversal algorithms, which will automatically select generalized coordinates and calculate the remaining degrees of freedom of each point, resolving $p(q)$ for a point once it is fully constrained.
+</p>
+
+<img src="images/jansen_linkage.png" align="middle" width="600pt" />
+<figcaption>A diagram of the Jansen linkage. Our generalized coordinate $q_0$ is the angle from point $Z$ to $X$</figcaption>
+
+<p>
+  By using a reference frame centered on the strand beast, we can ignore translation and rotation, reducing our degrees of freedom from 7 to 1. We can reintroduce the effects of our non-inertial reference frame using the fictitious centrifugal, Coriolis, and Euler forces. Fictitious and external forces are represented by a potential energy gradient in the position of the corresponding point mass.
+</p>
+
+<p>
+  We use Lagrangian mechanics to derive the equations of motion. Lagrange's equations state that $\frac{d}{dt} (\frac{dL}{d\Dot{\vec{q}}}) - \frac{dL}{d\vec{q}} = 0$, where the Lagrangian is defined as $L = T - V$, the kinetic energy minus the potential energy. Using the derivatives of $p(q)$ which we calculated, the equations of motion are as follows:
+</p>
+
+<p>\frac{d\vec{p}}{d\vec{q}}^T \frac{d\vec{p}}{d\vec{q}} \Ddot{\vec{q}} = -\frac{dV}{d\vec{q}} - ((\frac{d}{dt} \frac{d\vec{p}}{d\vec{q}})^T \frac{d\vec{p}}{d\vec{q}} + \frac{d\vec{p}}{d\vec{q}}^T (\frac{d}{dt} \frac{d\vec{p}}{d\vec{q}}))\Dot{\vec{q}}</p>
+
+<p>
+  As mentioned before, external and fictitious forces are implemented as potential gradients in the positions of the corresponding point masses, so $\frac{dL}{d\vec{q}} = \frac{d\vec{p}}{d\vec{q}}^T F$</p>
+
+todo: observe how forces result in projection
+
+The extrinsic coordinates are calculated using conservation of momentum. Extrinsic translational momentum is updated as if all external forces had been applied to the center of mass. We update the extrinsic angular momentum such that the total angular momentum is conserved. This effectively applies an Euler force which explains any change in internal angular momentum.
+
+After calculating the state evolution based on internal dynamics, we update the position of each point and check for collisions. Since our desert is represented by a height map, we can easily find the triangle directly below each point and check if the point is on the top side of it.
+
+describe lagrange multiplier solver
+explain why this does blow up for small dt
+
+Finally, we apply friction by applying a force opposing the velocity of all colliding points. The magnitude of this force is proportional to the collision force but does not depend on the velocity magnitude.
+</p>
 <div class="image">
   <img src="images/wireframe.gif" alt="Video of strandbeest wireframe">
   <p><center>Wireframe of a single strandbeest leg</center></p>
@@ -203,22 +262,26 @@
     <br/>
   
     Additionally, the scene rendering incorporates ray marching techniques to simulate atmospheric effects and depth. By iteratively advancing along the ray direction and evaluating the scene function, we generate the final color output. This approach enables the simulation of complex atmospheric interactions, contributing to the overall realism of the sky rendering.
-    <img src="images/sky_scene" alt="Our test environment with the sand shader, dune mesh, an a sky shader with a radiant sun and clouds">
-
+    <div class="image-row-centered">
+      <div class="image">
+          <img src="images/sky_scene.png" alt="Our test environment with the sand shader, dune mesh, an a sky shader with a radiant sun and clouds">
+          <p><center>Our test environment with the sand shader, dune mesh, an a sky shader with a radiant sun and clouds</center></p>
+      </div>
+    </div> 
   </p>
-<h2 align="middle">Results</h2>
-<img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
-<img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
-<img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
-<img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
-<img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
-
-<h2 align="middle">References</h2>
+<h1 align="middle">Results</h1>
+<div class="image-row-centered">
+  <div class="image">
+      <img src="images/final_demo.gif" alt="Here">
+      <p><center>Rigged Strandbeest in Sand Environment with Sky.</center></p>
+  </div>
+</div> 
+<h1 align="middle">References</h1>
 1. <a href="https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula">Rodrigues' Rotation Formula</a><br>
 2. <a href="https://en.wikipedia.org/wiki/Perlin_noise">Perlin Noise</a><br>
 3. <a href="https://www.alanzucconi.com/2019/10/08/journey-sand-shader-1/">Journey Sand Shader</a><br>
 
-<h2 align="middle">Individual Contributions</h2>
+<h1 align="middle">Individual Contributions</h1>
 <h3>Derek</h3>
 <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 <h3>Marcus</h3>
