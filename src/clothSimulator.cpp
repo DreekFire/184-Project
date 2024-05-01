@@ -332,19 +332,20 @@ void ClothSimulator::drawContents() {
     break;
   }
 
+  bool fogRendered = true; // todo: transparent fogbox
   for (CollisionObject *co : *collision_objects) {
       // check if it's the cube and render it with the sky shader
       if (co) {
           if (Cube* cube_test = dynamic_cast<Cube*>(co)) {
               // grab the sky shader from the list
-              const UserShader& sky_shader = shaders[shaders.size() - 1];
+              const UserShader& sky_shader = fogRendered ? shaders[shaders.size() - 1] : shaders[shaders.size() - 2];
               GLShader& skyShader = *sky_shader.nanogui_shader;
               skyShader.bind();
               skyShader.setUniform("u_model", model);
               skyShader.setUniform("u_view_projection", viewProjection);
               // send the sun position to the shader and the sun color
               skyShader.setUniform("u_sun_position", Vector3f(0, 0.5, 0), false);
-              skyShader.setUniform("u_sun_color", Vector3f(255, 255, 0), false);
+              skyShader.setUniform("u_sun_color", Vector3f(1, 1, 0.5), false);
               // send all the other uniforms needed for the sky shader
               Vector3D cam_pos = camera.position();
               skyShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);

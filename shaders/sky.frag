@@ -80,33 +80,37 @@ ray raydir(vec2 uv, vec2 m, float iTime) {
 
 
 float rand(vec3 p) {
-    vec3 q = vec3(12.345, 67.89, 412.12);
-    return fract(sin(dot(p, q)) * 42123.45) * 2.0 - 1.0;
+    highp float a = 1.9898;
+    highp float b = 7.233;
+    highp float c = 6.2634;
+    highp float d = 60;
+    highp float dt= dot(floor(p - vec3(0.5)), vec3(a,b,c));
+    highp float sn= mod(dt, PI);
+    return fract(sin(sn) * d);
 }
 
 float perlin(vec3 p) {
     vec3 u = floor(p);
-    vec3 v = fract(p);
+    vec3 v = p - u;
     vec3 s = smoothstep(0.0, 1.0, v);
-    float a = rand(u + a1);
-    float b = rand(u + b1);
-    float c = rand(u + c1);
-    float d = rand(u + d1);
-    float e = rand(u + e1);
-    float f = rand(u + f1);
-    float g = rand(u + g1);
-    float h = rand(u + h1);
+    highp float a = rand(u);
+    highp float b = rand(u + vec3(1, 0, 0));
+    highp float c = rand(u + vec3(0, 1, 0));
+    highp float d = rand(u + vec3(1, 1, 0));
+    highp float e = rand(u + vec3(0, 0, 1));
+    highp float f = rand(u + vec3(1, 0, 1));
+    highp float g = rand(u + vec3(0, 1, 1));
+    highp float h = rand(u + vec3(1, 1, 1));
     float r = mix(
-        mix(mix(a, b, s.x), mix(c, d, s.x), s.y),
-        mix(mix(e, f, s.x), mix(g, h, s.x), s.y),
-        s.z
-    );
-    return smoothstep(0.0, 1.0, pow(r, 0.5));
+      mix(mix(a, b, s.x), mix(c, d, s.x), s.y),
+      mix(mix(e, f, s.x), mix(g, h, s.x), s.y),
+    s.z);
+    return smoothstep(0.0, 1.0, pow(r * 2 - 1, 0.5));
 }
 
-float fbm(vec3 p, vec3 targetPos, float iTime) {
+float fbm(vec3 p, vec3 targetPos, float t) {
     vec3 off = vec3(10.0, 50.0, 0.1);
-    off.z *= iTime;
+    off.z *= t;
     vec3 q = p - off + targetPos;
     float f = 0.0;
     f += 0.5 * perlin(q);
@@ -142,7 +146,7 @@ vec4 march(vec3 ro, vec3 rd, float iTime) {
 
 
 void main() {
-    vec3 sunDirection = normalize(u_cam_pos - u_sun_position);
+    vec3 sunDirection = normalize(vec3(0.5, 0, 2.3));
     vec3 viewDir = normalize(vec3(eyeDirection, 1.0));
     
     // Calculate the relative size of the sun based on its distance from the camera
@@ -150,14 +154,14 @@ void main() {
     float sunSize = 0.00029;
     
     // Calculate the phase factor for sun color modulation
-    float phaseFactor = 0.5 + 0.5 * sin(u_time);
+    float phaseFactor = 1 + 0.1 * sin(u_time * 0.5);
     
     // Calculate the dot product between view direction and sun direction
-    float dotProduct = dot(viewDir, sunDirection);
+    float dotProduct = max(dot(viewDir, sunDirection), 0.0);
 
     if (dotProduct > 1.0 - sunSize) { 
         // If the dot product exceeds 1 - sunSize, the sun is visible
-        fragColor = vec4(u_sun_color * phaseFactor, 1.0);
+        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
     } else {
         // Interpolate sky color based on vertical position
         float t = gl_FragCoord.y / u_resolution.y;
@@ -168,16 +172,17 @@ void main() {
         vec2 m = u_resolution.xy / u_resolution.xy;
         
         // Generate ray direction
-        ray r = raydir(uv, m, u_time);
+        ray r = raydir(uv, m, u_time * 0.25);
         
         // Perform ray marching
-        vec4 col = march(r.o, r.d, u_time);
+        vec4 col = march(r.o, r.d, u_time * 0.25);
         
         // Apply fog effect
         float fog = 0.5 - 0.5 * col.a;
         vec3 colr = col.rgb;
         colr = mix(vec3(col.rgb) * 1.2 * exp(-0.01 * col.a * col.a), skyColor, fog);
         
-        fragColor = vec4(colr, 1.0);
+        float fac = pow(2.718, 256 * (pow(dotProduct + sunSize, 2) - 1)) * phaseFactor;
+        fragColor = (1 - fac) * vec4(colr, 1.0) + fac * vec4(u_sun_color, 1.0);
     }
 }
