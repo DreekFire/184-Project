@@ -43,7 +43,7 @@
 <p>To give the strandbeest a body, we build 3D geometry over the wireframe of pointmasses and structural springs as spheres and cylinders respectively. Firstly, we defined these two geometries.
     For spheres we adapted what existed in homework 4, turning off collision logic as to not interfere with the underlying point mass representation.
     On each timestep we edit the sphere position to match their corresponding pointmass. For the leg structures we had to implement a new shape, cylinders. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
-    
+    Then to render them we iterate through our list of structural springs, computing center point, height, and axis from the spring's end pointmasses. Computing center and height were trivial. To compute the axis we employed Rodrigues' rotation formula to transform the starting axis of (0, 1, 0) to our desired orientation.
 </p>
 <h3>Environment</h3>
 <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
