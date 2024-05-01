@@ -159,9 +159,12 @@
 </p>
 
 <h3>Sky/Atmospherics</h3>
-<p>We generated a sky using a shader projected onto a Cubemap. We for the blue sky we created a gradient between two shades of blue to 
-    render a realistic sky, for the sun we rendered a circle at a point in world space, then displayed it according to the norm between the camera position and the suns position, then checking the dot product between the camera's position and the suns position to determine if the sun is visible.
-    We generated clouds using a Perlin noise function to generate a 2D texture, then used a Fractal Brownian Motion function to combine layers of noise to create a cloud texture. We then calculated the direction of the ray and the distance and generated a color based on these.
+<p>
+    We implemented a sky rendering system using shaders and Cubemaps. To achieve a realistic depiction of the sky, we employed a gradient between two shades of blue. This gradient blends together, mimicking the color of the sky in real life .
+
+    For the sun we started by rendering a circular element positioned in world space. This positioning is dynamically adjusted based on the camera's perspective, ensuring proper alignment with the viewer's line of sight by making it appear, dissapear, and move with the camera so that it appears to be fixed in the sky. By evaluating the dot product between the camera's position and the sun's, we can determine when the sun is visible, allowing for realistic lighting effects.
+    
+    Our cloud generation method utilizes Perlin noise, a method for creating natural-looking textures. By applying Fractal Brownian Motion, we stack multiple layers of noise to create pseudorandom and realistic cloud patterns. This process results in a detailed and realistic cloud/fog formation in the sky.
 </p>
 <h2 align="middle">Results</h2>
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
