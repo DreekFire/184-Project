@@ -30,7 +30,7 @@ void Beest::buildBeest() {
   ss.reserve((22 + 3) * Jansen::nLegs - 3);
   for (int i = 0; i < Jansen::nPoints; i++) {
     pms.push_back(PointMass(Vector3D(0), false));
-    spheres.push_back(Sphere(Vector3D(0), 0.007, 0));
+    spheres.push_back(Sphere(Vector3D(0), 0.005, 0));
   }
 
   legModel = Jansen(
@@ -93,7 +93,7 @@ void Beest::buildBeest() {
     Vector3D center = (a + b) / 2;
     Vector3D axis = a - b;
     double dist = (a - b).norm() / 2;
-    cs.push_back(Cylinder(center, axis, 0.005, dist, 0.5));
+    cs.push_back(Cylinder(center, axis, 0.003, dist, 0.5));
   }
 }
 

@@ -104,59 +104,80 @@
 
 <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2024</h1>
 <h1 align="middle">Final Project Report: Strandbeest Simulation</h1>
-<h2 align="middle">Derek Guo, Pranav Kolluri, Rohan Agrawal, Marcus Cheung</h2>
+<h2 align="middle">Derek Guo, Marcus Cheung, Pranav Kolluri, Rohan Agrawal</h2>
 
 <br><br>
 
     <div>
 
-      <h2 align="middle">Abstract</h2>
-      <p>
-        We created simulation of a <a href="https://www.strandbeest.com/">strandbeest</a> walking through a desert. We implemented a reduced-coordinate physics simulation for the strandbeest 
+<h2 align="middle">Abstract</h2>
+<p>
+  We created a simulation of a <a href="https://www.strandbeest.com/">strandbeest</a> walking along a beach. We primarily focused on simulating the physical joints of the strandbeest, rigging of our model, and the visual rendering of the sand and sky.
+</p>
+
+<h2 align="middle">Technical Approach</h2>
+<h3>Physics Simulation</h3>
+<p>
+  We implemented a system for simulating linkages using a reduced coordinate formulation which uses a set of generalized coordinates equal in number to the degrees of freedom of the system. We used this reduced coordinate formulation to physically simulate a strandbeest that realistically responds to external forces and collisions. We then placed this strandbeest in a desert to give it an environment to walk through. The desert involves procedurally generated dunes and a sand and skybox shader which features glittering and clouds. Our physics simulator is based on Lagrangian mechanics. Our system was implemented on top of hw4.
+</p>
+
+      <img src="img/shaded4.png" align="middle" width="600pt"/>
+      <figcaption>We started from hw4 for rendering and shaders, but did not use any of the physics simulation components.</figcaption>
+
+  d/dt (d/dq' L) - d/dq L = 0
+  L = KE - PE
+<p>
+  In particular, we picked the crankshaft angle as our single generalized coordinate and simulated the beest in a reference frame centered on its center of mass and rotating with the beest. Our system is general to any linkage and requires three things: The linkage definition described as points and joints. a resolution function which takes in generalized coordinates and outputs the positions of enough points to completely determine the system and a resolution order which defines the order in which to calculate the positions of the remaining points. In the future, we hope to automate these latter two processes using graph traversal algorithms, which automatically calculate the remaining degrees of freedom of each point.
+</p>
+
+        By using a reference frame centered on the strand beast, we can ignore translation and rotation, reducing our degrees of freedom from 7 to 1. We can reintroduce the effects of our non-inertial reference frame using the fictitious centrifugal, Coriolis, and Euler forces. Fictitious and external forces are represented by a potential energy gradient in the position of the corresponding point mass.
+
+        describe the solution
+
+        The extrinsic coordinates are calculated using conservation of momentum. Extrinsic translational momentum is updated as if all external forces had been applied to the center of mass. We update the extrinsic angular momentum such that the total angular momentum is conserved. This effectively applies an Euler force which explains any change in internal angular momentum.
+
+        After calculating the state evolution based on internal dynamics, we update the position of each point and check for collisions. Since our desert is represented by a height map, we can easily find the triangle directly below each point and check if the point is on the top side of it.
+
+        describe lagrange multiplier solver
+        explain why this does blow up for small dt
+
+        Finally, we apply friction by applying a force opposing the velocity of all colliding points. The magnitude of this force is proportional to the collision force but does not depend on the velocity magnitude.
       </p>
+<h3>Rigging Body Geometry</h3>
+<p>To give the strandbeest a body, we build 3D geometry over the wireframe of pointmasses and structural springs as spheres and cylinders respectively. Firstly, we defined these two geometries.
+    For spheres we adapted what existed in homework 4, turning off collision logic as to not interfere with the underlying point mass representation.
+    On each timestep we edit the sphere position to match their corresponding pointmass. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
+    Then to render them we iterate through our list of structural springs, computing center point, height, and axis from the spring's end pointmasses. Computing center and height were trivial using midpoint and distance formula.
+    To compute the axis we employed Rodrigues' rotation formula to transform the base axis of (0, 1, 0) to our desired orientation by deriving the rotation matrix.
+    By composing this rotation matrix along with a scaling transform with height and radius, and translation with center point, in that order, we compute a 3D homogenous matrix to transform the unit cylinder for rendering.
+</p>
+<h3>Terrain</h3>
+<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 
-      <h2 align="middle">Technical Approach</h2>
-      <h3>Physics Simulation</h3>
-      <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
-      <h3>Body Geometry</h3>
-      <p>To give the strandbeest a body, we build 3D geometry over the wireframe of pointmasses and structural springs as spheres and cylinders respectively. Firstly, we defined these two geometries.
-          For spheres we adapted what existed in homework 4, turning off collision logic as to not interfere with the underlying point mass representation.
-          On each timestep we edit the sphere position to match their corresponding pointmass. For the leg structures we had to implement a new shape, cylinders. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
-    
-      </p>
-      <h3>Terrain</h3>
-      <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<h3>Sky/Atmospherics</h3>
+<p>We generated a sky using a shader projected onto a Cubemap. We for the blue sky we created a gradient between two shades of blue to 
+    render a realistic sky, for the sun we rendered a circle at a point in world space, then displayed it according to the norm between the camera position and the suns posiiton, then checkinig the dot product between the camera's position and the suns position to determine if the sun is visible.
+    We generated clouds using a Perlin noise function to generate a 2D texture, then used a Fractal Brownian Motion function to combine layers of noise to create a cloud texture. We then caluclated the direction of the ray and the distance and generated a color based on these.
+</p>
+<h2 align="middle">Results</h2>
+<img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
+<img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
+<img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
+<img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
+<img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
 
-      <h3>Sky/Atmospherics</h3>
-      <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
-      <h2 align="middle">Results</h2>
-      <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
-      <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
-      <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
-      <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
-      <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
+<h2 align="middle">References</h2>
+1. <a href="https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula">Rodrigues' Rotation Formula</a>
 
-      </p>
-      <h3>Environment</h3>
-      <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
-      <h2 align="middle">Results</h2>
-      <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ=" /></img>
-      <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ=" /></img>
-      <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ=" /></img>
-      <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ=" /></img>
-      <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ=" /></img>
-
-      <h2 align="middle">References</h2>
-      <p>linkslinkslinks</p>
-
-      <h2 align="middle">Individual Contributions</h2>
-      <h3>Marcus</h3>
-      <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
-      <h3>Derek</h3>
-      <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
-      <h3>Pranav</h3>
-      <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
-      <h3>Rohan</h3>
-      <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
-    </div></body>
+<h2 align="middle">Individual Contributions</h2>
+<h3>Marcus</h3>
+<p>Implemented the rigging of the strandbeest wireframe with 3D geometry and homogenous transformation algorithm to correctly build the cylinder according to given placement coordinate, height, radius, and axis params.</p>
+<h3>Derek</h3>
+<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<h3>Pranav</h3>
+<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<h3>Rohan</h3>
+<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+</body>
+>>>>>>> 524c6b79411694dc2a350cd0cdafffe950915875
 </html>
