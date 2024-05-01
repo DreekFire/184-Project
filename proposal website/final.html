@@ -104,7 +104,7 @@
 
 <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2024</h1>
 <h1 align="middle">Final Project Report: Strandbeest Simulation</h1>
-<h2 align="middle">Derek Guo, Pranav Kolluri, Rohan Agrawal, Marcus Cheung</h2>
+<h2 align="middle">Derek Guo, Marcus Cheung, Pranav Kolluri, Rohan Agrawal</h2>
 
 <br><br>
 
@@ -112,18 +112,20 @@
 
 <h2 align="middle">Abstract</h2>
 <p>
-  We will create a simulation of a <a href="https://www.strandbeest.com/">strandbeest</a> walking along a beach. We will primarily focus on the simulation of the physical joints of the strandbeest and the visual rendering of the sand. If we have extra time, we may also incorporate physically realistic procedural generation of the sand and have it move under then strandbeest.
+  We created a simulation of a <a href="https://www.strandbeest.com/">strandbeest</a> walking along a beach. We primarily focused on simulating the physical joints of the strandbeest, rigging of our model, and the visual rendering of the sand and sky.
 </p>
 
 <h2 align="middle">Technical Approach</h2>
 <h3>Physics Simulation</h3>
 <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 
-<h3>Body Geometry</h3>
+<h3>Rigging Body Geometry</h3>
 <p>To give the strandbeest a body, we build 3D geometry over the wireframe of pointmasses and structural springs as spheres and cylinders respectively. Firstly, we defined these two geometries.
     For spheres we adapted what existed in homework 4, turning off collision logic as to not interfere with the underlying point mass representation.
-    On each timestep we edit the sphere position to match their corresponding pointmass. For the leg structures we had to implement a new shape, cylinders. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
-    
+    On each timestep we edit the sphere position to match their corresponding pointmass. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
+    Then to render them we iterate through our list of structural springs, computing center point, height, and axis from the spring's end pointmasses. Computing center and height were trivial using midpoint and distance formula.
+    To compute the axis we employed Rodrigues' rotation formula to transform the base axis of (0, 1, 0) to our desired orientation by deriving the rotation matrix.
+    By composing this rotation matrix along with a scaling transform with height and radius, and translation with center point, in that order, we compute a 3D homogenous matrix to transform the unit cylinder for rendering.
 </p>
 <h3>Terrain</h3>
 <p>Our terrain has two primary components: the actual rendered mesh and the shader. The mesh system is composed of a wrapper and main mesh method, in a similar high-level architecture to the sphere. 
@@ -157,8 +159,10 @@
 </p>
 
 <h3>Sky/Atmospherics</h3>
-<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
-
+<p>We generated a sky using a shader projected onto a Cubemap. We for the blue sky we created a gradient between two shades of blue to 
+    render a realistic sky, for the sun we rendered a circle at a point in world space, then displayed it according to the norm between the camera position and the suns position, then checking the dot product between the camera's position and the suns position to determine if the sun is visible.
+    We generated clouds using a Perlin noise function to generate a 2D texture, then used a Fractal Brownian Motion function to combine layers of noise to create a cloud texture. We then calculated the direction of the ray and the distance and generated a color based on these.
+</p>
 <h2 align="middle">Results</h2>
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
@@ -167,15 +171,17 @@
 <img width='150px' src="https://media.istockphoto.com/id/1409329028/vector/no-picture-available-placeholder-thumbnail-icon-illustration-design.jpg?s=612x612&w=0&k=20&c=_zOuJu755g2eEUioiOUdz_mHKJQJn-tDgIAhQzyeKUQ="></img>
 
 <h2 align="middle">References</h2>
-<p>linkslinkslinks</p>
+1. <a href="https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula">Rodrigues' Rotation Formula</a><br>
+2. <a href="https://en.wikipedia.org/wiki/Perlin_noise">Perlin Noise</a><br>
+3. <a href="https://www.alanzucconi.com/2019/10/08/journey-sand-shader-1/">Journey Sand Shader</a><br>
 
 <h2 align="middle">Individual Contributions</h2>
 <h3>Marcus</h3>
-<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<p>Implemented the rigging of the strandbeest wireframe with 3D geometry and homogenous transformation algorithm to correctly build the cylinder according to given placement coordinate, height, radius, and axis params.</p>
 <h3>Derek</h3>
 <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 <h3>Pranav</h3>
-<p>asldkmfalsdkmfalksmdflkamsldfkm</p>
+<p>Implemented the terrain mesh builder as well as the accompanying shader. Also contributed to the final sky shader (and had created quite a few previous versions that were scrapped).</p>
 <h3>Rohan</h3>
 <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 </body>
