@@ -119,13 +119,12 @@
 <h3>Physics Simulation</h3>
 <p>asldkmfalsdkmfalksmdflkamsldfkm</p>
 <h3>Rigging Body Geometry</h3>
-<p>To give the strandbeest a body, we build 3D geometry over the wireframe of pointmasses and structural springs as spheres and cylinders respectively. To create the frame of the structure we used cylinders, which were a custom object we created 
-    by defining a new class of objects defined by their axis, center, height, and radius. Firstly, we defined these two geometries.
+<p>To give the strandbeest a body, we build 3D geometry over the wireframe of pointmasses and structural springs as spheres and cylinders respectively. Firstly, we defined these two geometries.
     For spheres we adapted what existed in homework 4, turning off collision logic as to not interfere with the underlying point mass representation.
-    On each timestep we edit the sphere position to match their corresponding pointmass. For the leg structures we had to implement a new shape, cylinders. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
-    Then to render them we iterate through our list of structural springs, computing center point, height, and axis from the spring's end pointmasses. Computing center and height were trivial.
-    To compute the axis we employed Rodrigues' rotation formula to transform the starting axis of (0, 1, 0) to our desired orientation by deriving the rotation matrix.
-    By composing this rotation matrix along with a scaling transform with height and radius, and translation with center point, in that order, we compute a 3D homogenous matrix.
+    On each timestep we edit the sphere position to match their corresponding pointmass. We defined cylinders with a given central point, radius, height, and axis vector representing its orientation.
+    Then to render them we iterate through our list of structural springs, computing center point, height, and axis from the spring's end pointmasses. Computing center and height were trivial using midpoint and distance formula.
+    To compute the axis we employed Rodrigues' rotation formula to transform the base axis of (0, 1, 0) to our desired orientation by deriving the rotation matrix.
+    By composing this rotation matrix along with a scaling transform with height and radius, and translation with center point, in that order, we compute a 3D homogenous matrix to transform the unit cylinder for rendering.
     
   </p>
 <h3>Terrain</h3>
