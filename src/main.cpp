@@ -38,7 +38,8 @@ const string CLOTH = "cloth";
 const string DUNE = "dune";
 const string CYLINDER = "cylinder";
 const string CUBE = "cube";
-const unordered_set<string> VALID_KEYS = {SPHERE, PLANE, DUNE, CLOTH, CUBE, CYLINDER};
+const string DUST = "dust";
+const unordered_set<string> VALID_KEYS = {SPHERE, PLANE, DUNE, CLOTH, CUBE, DUST, CYLINDER};
 
 ClothSimulator *app = nullptr;
 GLFWwindow *window = nullptr;
@@ -337,7 +338,7 @@ bool loadObjectsFromFile(string filename, Cloth *cloth, ClothParameters *cp, vec
         Sphere* s = new Sphere(origin, radius, friction, sphere_num_lat, sphere_num_lon);
         objects->push_back(s);
     }
-    else if (key == CUBE) { // HANDLE A DUNE
+    else if (key == CUBE || key == DUST) { // HANDLE A SKYBOX
         Vector3D point;
         int size;
 

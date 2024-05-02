@@ -85,13 +85,13 @@ void ClothSimulator::load_textures() {
   m_gl_texture_2_size = load_texture(2, m_gl_texture_2, (m_project_root + "/textures/texture_2.png").c_str());
   m_gl_texture_3_size = load_texture(3, m_gl_texture_3, (m_project_root + "/textures/texture_3.png").c_str());
   m_gl_texture_4_size = load_texture(4, m_gl_texture_4, (m_project_root + "/textures/texture_4.png").c_str());
-  m_gl_ripples_size = load_texture(0, m_gl_ripples, (m_project_root + "/textures/ripples.jpg").c_str());
-  m_gl_skybox_posx_size = load_texture(0, m_gl_skybox_posx, (m_project_root + "/textures/cube/posx.jpg").c_str());
-  m_gl_skybox_negx_size = load_texture(0, m_gl_skybox_negx, (m_project_root + "/textures/cube/negx.jpg").c_str());
-  m_gl_skybox_posy_size = load_texture(0, m_gl_skybox_posy, (m_project_root + "/textures/cube/posy.jpg").c_str());
-  m_gl_skybox_negy_size = load_texture(0, m_gl_skybox_negy, (m_project_root + "/textures/cube/negy.jpg").c_str());
-  m_gl_skybox_posz_size = load_texture(0, m_gl_skybox_posz, (m_project_root + "/textures/cube/posz.jpg").c_str());
-  m_gl_skybox_negz_size = load_texture(0, m_gl_skybox_negz, (m_project_root + "/textures/cube/negz.jpg").c_str());
+  m_gl_ripples_size = load_texture(5, m_gl_ripples, (m_project_root + "/textures/ripples.jpg").c_str());
+  m_gl_skybox_posx_size = load_texture(6, m_gl_skybox_posx, (m_project_root + "/textures/cube/posx.jpg").c_str());
+  m_gl_skybox_negx_size = load_texture(7, m_gl_skybox_negx, (m_project_root + "/textures/cube/negx.jpg").c_str());
+  m_gl_skybox_posy_size = load_texture(8, m_gl_skybox_posy, (m_project_root + "/textures/cube/posy.jpg").c_str());
+  m_gl_skybox_negy_size = load_texture(9, m_gl_skybox_negy, (m_project_root + "/textures/cube/negy.jpg").c_str());
+  m_gl_skybox_posz_size = load_texture(10, m_gl_skybox_posz, (m_project_root + "/textures/cube/posz.jpg").c_str());
+  m_gl_skybox_negz_size = load_texture(11, m_gl_skybox_negz, (m_project_root + "/textures/cube/negz.jpg").c_str());
 
   
   std::cout << "Texture 1 loaded with size: " << m_gl_texture_1_size << std::endl;
@@ -110,7 +110,7 @@ void ClothSimulator::load_textures() {
     m_project_root + "/textures/cube/negz.jpg"
   };
   
-  load_cubemap(5, m_gl_cubemap_tex, cubemap_fnames);
+  load_cubemap(12, m_gl_cubemap_tex, cubemap_fnames);
   std::cout << "Loaded cubemap texture" << std::endl;
 }
 
@@ -180,11 +180,31 @@ ClothSimulator::ClothSimulator(std::string project_root, Screen *screen)
   this->screen = screen;
   
   this->load_shaders();
+
+  GLenum error = glGetError();
+  if (error != GL_NO_ERROR) {
+    printf("OpenGL error shaders %d\n", error);
+  }
+
   this->load_textures();
 
+  error = glGetError();
+  if (error != GL_NO_ERROR) {
+    printf("OpenGL error constructor 0 %d\n", error);
+  }
+
   glEnable(GL_PROGRAM_POINT_SIZE);
-  glLineWidth(10.0f);
+  error = glGetError();
+  if (error != GL_NO_ERROR) {
+    printf("OpenGL error constructor 1 %d\n", error);
+  }
   glEnable(GL_DEPTH_TEST);
+
+  // Check for OpenGL errors
+  error = glGetError();
+  if (error != GL_NO_ERROR) {
+    printf("OpenGL error constructor 2 %d\n", error);
+  }
 }
 
 ClothSimulator::~ClothSimulator() {
@@ -196,6 +216,9 @@ ClothSimulator::~ClothSimulator() {
   glDeleteTextures(1, &m_gl_texture_3);
   glDeleteTextures(1, &m_gl_texture_4);
   glDeleteTextures(1, &m_gl_cubemap_tex);
+
+  glDeleteTextures(1, &depthTexture);
+  glDeleteFramebuffers(1, &frameBuffer);
 
   if (cloth) delete cloth;
   if (cp) delete cp;
@@ -246,6 +269,12 @@ void ClothSimulator::init() {
 
   // canonicalCamera is a copy used for view resets
 
+  // Check for OpenGL errors
+  GLenum error = glGetError();
+  if (error != GL_NO_ERROR) {
+    printf("OpenGL error pre-cam %d\n", error);
+  }
+
   camera.place(target, acos(c_dir.y), atan2(c_dir.x, c_dir.z), view_distance,
                min_view_distance, max_view_distance);
   canonicalCamera.place(target, acos(c_dir.y), atan2(c_dir.x, c_dir.z),
@@ -256,6 +285,55 @@ void ClothSimulator::init() {
 
   camera.configure(camera_info, screen_w, screen_h);
   canonicalCamera.configure(camera_info, screen_w, screen_h);
+
+  // Check for OpenGL errors
+  error = glGetError();
+  if (error != GL_NO_ERROR) {
+    printf("OpenGL error -1 %d\n", error);
+  }
+
+  glGenFramebuffers(1, &frameBuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+  // Check for OpenGL errors
+  error = glGetError();
+  if (error != GL_NO_ERROR) {
+    printf("OpenGL error 0 %d\n", error);
+  }
+
+  glGenTextures(1, &depthTexture);
+  glActiveTexture(GL_TEXTURE13);
+  glBindTexture(GL_TEXTURE_2D, depthTexture);
+
+  // Check for OpenGL errors
+  error = glGetError();
+  if (error != GL_NO_ERROR) {
+    printf("OpenGL error 1 %d\n", error);
+  }
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, screen_w, screen_h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+
+  GLenum DrawBuffers[1] = { GL_NONE };
+  glDrawBuffers(1, DrawBuffers);
+  
+  GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+  {
+    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER); // GL_FRAMEBUFFER_INCOMPLETE_ATTACHMEN(0x8CD6)
+    printf("Invalid framebuffer\n");
+  }
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 bool ClothSimulator::isAlive() { return is_alive; }
@@ -279,6 +357,7 @@ void ClothSimulator::drawContents() {
   Matrix4f projection = getProjectionMatrix();
 
   Matrix4f viewProjection = projection * view;
+  Matrix4f inverseViewProjection = viewProjection.inverse();
 
   shader.setUniform("u_model", model);
   shader.setUniform("u_view_projection", viewProjection);
@@ -292,10 +371,10 @@ void ClothSimulator::drawContents() {
     }
   }
 
-  for (auto leg : cloth->beest.cs) {
+  for (Cylinder& leg : cloth->beest.cs) {
     leg.render(shader);
   }
-  for (auto sphere : cloth->beest.spheres) {
+  for (Sphere& sphere : cloth->beest.spheres) {
     sphere.render(shader);
   }
   shader.setUniform("u_model", model);
@@ -313,7 +392,8 @@ void ClothSimulator::drawContents() {
     Vector3D cam_pos = camera.position();
     shader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
     shader.setUniform("u_light_pos", Vector3f(150, 500, -700), false);
-    shader.setUniform("u_light_intensity", Vector3f(200000, 200000, 200000), false);
+    shader.setUniform("u_light_intensity", Vector3f(1, 1, 1), false);
+    shader.setUniform("u_time", (float)glfwGetTime() - timeOffset, false);
     shader.setUniform("u_texture_1_size", Vector2f(m_gl_texture_1_size.x, m_gl_texture_1_size.y), false);
     shader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
     shader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
@@ -332,82 +412,104 @@ void ClothSimulator::drawContents() {
     break;
   }
 
-  bool fogRendered = true; // todo: transparent fogbox
+  bool skyRendered = false; // todo: transparent fogbox
   for (CollisionObject *co : *collision_objects) {
-      // check if it's the cube and render it with the sky shader
-      if (co) {
-          if (Cube* cube_test = dynamic_cast<Cube*>(co)) {
-              // grab the sky shader from the list
-              const UserShader& sky_shader = fogRendered ? shaders[shaders.size() - 1] : shaders[shaders.size() - 2];
-              GLShader& skyShader = *sky_shader.nanogui_shader;
-              skyShader.bind();
-              skyShader.setUniform("u_model", model);
-              skyShader.setUniform("u_view_projection", viewProjection);
-              // send the sun position to the shader and the sun color
-              skyShader.setUniform("u_sun_position", Vector3f(0, 0.5, 0), false);
-              skyShader.setUniform("u_sun_color", Vector3f(1, 1, 0.5), false);
-              // send all the other uniforms needed for the sky shader
-              Vector3D cam_pos = camera.position();
-              skyShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
-              Vector3D cam_target = camera.view_point();
-              skyShader.setUniform("u_cam_target", Vector3f(cam_target.x, cam_target.y, cam_target.z), false);
-              // grab the time and send it to the shader
-              // this is used to animate the sky
-              skyShader.setUniform("u_time", (float)glfwGetTime(), false);
-              // grab the screen size and send it to the shader as a vec2   
-              skyShader.setUniform("u_resolution", Vector2f(screen_w, screen_h), false);
-              // dump the skybox textures into the shader
-              skyShader.setUniform("u_texture_posx", 5, false);
-              skyShader.setUniform("u_texture_negx", 6, false);
-              skyShader.setUniform("u_texture_posy", 7, false);
-              skyShader.setUniform("u_texture_negy", 8, false);
-              skyShader.setUniform("u_texture_posz", 9, false);
-              skyShader.setUniform("u_texture_negz", 10, false);
-              // dump the skybox sizes into the shader
-              // this is used to scale the skybox
-              // so it fits the screen
-              skyShader.setUniform("u_texture_size", Vector2f(m_gl_skybox_posx_size.x, m_gl_skybox_posx_size.y), false);
-              co->render(skyShader);
-              // skip the rest of the code for this object
-              continue;
-          }
-          else if (Dune* dune_test = dynamic_cast<Dune*>(co)) {
-              // grab the sand shader from the list
-              const UserShader& sand_shader = shaders[shaders.size() - 2];
-              // grab the sand shader and add all the uniforms and other needed stuff to make it work
-              GLShader& sandShader = *sand_shader.nanogui_shader;
-              sandShader.bind();
-              sandShader.setUniform("u_model", model);
-              sandShader.setUniform("u_view_projection", viewProjection);
-              // Others
-              Vector3D cam_pos = camera.position();
-              sandShader.setUniform("u_color", color, false);
-              sandShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
-              sandShader.setUniform("u_light_pos", Vector3f(150, 500, -700), false);
-              sandShader.setUniform("u_light_intensity", Vector3f(200000, 200000, 200000), false);
-              sandShader.setUniform("u_texture_1_size", Vector2f(m_gl_texture_1_size.x, m_gl_texture_1_size.y), false);
-              sandShader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
-              sandShader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
-              sandShader.setUniform("u_texture_4_size", Vector2f(m_gl_texture_4_size.x, m_gl_texture_4_size.y), false);
-              sandShader.setUniform("u_ripples_size", Vector2f(m_gl_ripples_size.x, m_gl_ripples_size.y), false);
-              sandShader.setUniform("u_view_projection", viewProjection);
-              // Textures
-              sandShader.setUniform("u_texture_1", 1, false);
-              sandShader.setUniform("u_texture_2", 2, false);
-              sandShader.setUniform("u_texture_3", 3, false);
-              sandShader.setUniform("u_texture_4", 4, false);
-              sandShader.setUniform("u_ripples", 5, false);
+    // check if it's the cube and render it with the sky shader
+    if (co) {
+      if (Cube* cube_test = dynamic_cast<Cube*>(co)) {
+        // grab the sky shader from the list
+        const UserShader& sky_shader = skyRendered ? shaders[shaders.size() - 3] : shaders[shaders.size() - 1];
+        GLShader& skyShader = *sky_shader.nanogui_shader;
+        skyShader.bind();
+        if (skyRendered) {
+          glClear(GL_DEPTH_BUFFER_BIT);
+          glActiveTexture(GL_TEXTURE13);
+          glBindTexture(GL_TEXTURE_2D, depthTexture);
+          skyShader.setUniform("u_depth", 13, false);
+        }
+        skyShader.setUniform("u_model", model);
+        skyShader.setUniform("u_view_projection", viewProjection);
+        skyShader.setUniform("u_inverse_view_projection", inverseViewProjection, false);
+        // send the sun position to the shader and the sun color
+        skyShader.setUniform("u_sun_position", Vector3f(0, 0.5, 0), false);
+        skyShader.setUniform("u_sun_color", Vector3f(1, 1, 0.5), false);
+        // send all the other uniforms needed for the sky shader
+        Vector3D cam_pos = camera.position();
+        skyShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
+        Vector3D cam_target = camera.view_point();
+        skyShader.setUniform("u_cam_target", Vector3f(cam_target.x, cam_target.y, cam_target.z), false);
+        // grab the time and send it to the shader
+        // this is used to animate the sky
+        skyShader.setUniform("u_time", (float)glfwGetTime() - timeOffset, false);
+        // grab the screen size and send it to the shader as a vec2   
+        skyShader.setUniform("u_resolution", Vector2f(screen_w, screen_h), false);
+        // dump the skybox textures into the shader
+        skyShader.setUniform("u_texture_posx", 5, false);
+        skyShader.setUniform("u_texture_negx", 6, false);
+        skyShader.setUniform("u_texture_posy", 7, false);
+        skyShader.setUniform("u_texture_negy", 8, false);
+        skyShader.setUniform("u_texture_posz", 9, false);
+        skyShader.setUniform("u_texture_negz", 10, false);
+        // dump the skybox sizes into the shader
+        // this is used to scale the skybox
+        // so it fits the screen
+        skyShader.setUniform("u_texture_size", Vector2f(m_gl_skybox_posx_size.x, m_gl_skybox_posx_size.y), false);
+        co->render(skyShader);
+        skyRendered = true;
+        // skip the rest of the code for this object
+        continue;
+      }
+      else if (Dune* dune_test = dynamic_cast<Dune*>(co)) {
+        // grab the sand shader from the list
+        const UserShader& sand_shader = shaders[shaders.size() - 2];
+        // grab the sand shader and add all the uniforms and other needed stuff to make it work
+        GLShader& sandShader = *sand_shader.nanogui_shader;
+        sandShader.bind();
+        sandShader.setUniform("u_model", model);
+        sandShader.setUniform("u_view_projection", viewProjection);
+        // Others
+        Vector3D cam_pos = camera.position();
+        sandShader.setUniform("u_color", color, false);
+        sandShader.setUniform("u_cam_pos", Vector3f(cam_pos.x, cam_pos.y, cam_pos.z), false);
+        sandShader.setUniform("u_light_intensity", Vector3f(1, 1, 1), false);
+        sandShader.setUniform("u_texture_1_size", Vector2f(m_gl_texture_1_size.x, m_gl_texture_1_size.y), false);
+        sandShader.setUniform("u_texture_2_size", Vector2f(m_gl_texture_2_size.x, m_gl_texture_2_size.y), false);
+        sandShader.setUniform("u_texture_3_size", Vector2f(m_gl_texture_3_size.x, m_gl_texture_3_size.y), false);
+        sandShader.setUniform("u_texture_4_size", Vector2f(m_gl_texture_4_size.x, m_gl_texture_4_size.y), false);
+        sandShader.setUniform("u_ripples_size", Vector2f(m_gl_ripples_size.x, m_gl_ripples_size.y), false);
+        sandShader.setUniform("u_view_projection", viewProjection);
+        sandShader.setUniform("u_inverse_view_projection", inverseViewProjection, false);
+        sandShader.setUniform("u_time", (float)glfwGetTime() - timeOffset, false);
+        // Textures
+        sandShader.setUniform("u_texture_1", 1, false);
+        sandShader.setUniform("u_texture_2", 2, false);
+        sandShader.setUniform("u_texture_3", 3, false);
+        sandShader.setUniform("u_texture_4", 4, false);
+        sandShader.setUniform("u_ripples", 5, false);
 
-              sandShader.setUniform("u_normal_scaling", m_normal_scaling, false);
-              sandShader.setUniform("u_height_scaling", m_height_scaling, false);
+        sandShader.setUniform("u_normal_scaling", m_normal_scaling, false);
+        sandShader.setUniform("u_height_scaling", m_height_scaling, false);
 
-              sandShader.setUniform("u_texture_cubemap", 5, false);
-              co->render(sandShader);
+        sandShader.setUniform("u_texture_cubemap", 5, false);
+        co->render(sandShader);
+        GLShader& depthShader = *shaders[shaders.size() - 4].nanogui_shader;
+        depthShader.bind();
+        depthShader.setUniform("u_model", model);
+        depthShader.setUniform("u_view_projection", viewProjection);
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+        glDepthMask(GL_TRUE);
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearDepth(1.0);
+        glViewport(0, 0, screen_w, screen_h);
+        co->render(depthShader);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, screen_w, screen_h);
 		  }
-          else {
+      else {
 			  co->render(shader);
 		  }
-      } 
+    } 
   }
 }
 
@@ -504,16 +606,6 @@ void ClothSimulator::drawBeestWireframe(GLShader &shader) {
   //shader.uploadAttrib("in_normal", normals);
 
   shader.drawArray(GL_LINES, 0, num_springs * 2);
-  
-  Eigen::Matrix<float, 4, 2> ground_positions;
-  ground_positions.col(0) << -10, 0, 0, 1.0;
-  ground_positions.col(1) << 10, 0, 0, 1.0;
-  
-  shader.setUniform("u_color", nanogui::Color(0.0f, 1.0f, 0.0f, 1.0f), false);
-
-  shader.uploadAttrib("in_position", ground_positions, false);
-
-  shader.drawArray(GL_LINES, 0, 2);
   
   /*
   Eigen::Matrix<float, 4, -1> vLines;
@@ -765,6 +857,7 @@ bool ClothSimulator::keyCallbackEvent(int key, int scancode, int action,
     case 'r':
     case 'R':
       cloth->reset();
+      timeOffset = (float)glfwGetTime();
       break;
     case ' ':
       resetCamera();
@@ -801,6 +894,8 @@ bool ClothSimulator::resizeCallbackEvent(int width, int height) {
   screen_h = height;
 
   camera.set_screen_size(screen_w, screen_h);
+  glBindTexture(GL_TEXTURE_2D, depthTexture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
   return true;
 }
 

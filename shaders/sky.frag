@@ -2,6 +2,7 @@
 
 const vec3 u_skyBottomColor = vec3(0.1, 0.4, 0.90);  // Color of the sky near the horizon
 const vec3 u_skyTopColor = vec3(0.5, 0.7, 1.0);    // Color of the sky at the top
+const vec3 u_skySunColor = vec3(1, 0.3, 0.1);    // Color of the sky near the sun (for sunset/sunrise)
 const float u_horizonHeight = 10.0;                 // Height of the horizon
 
 uniform vec3 u_sun_color;            // Color of the sun
@@ -10,6 +11,7 @@ uniform vec3 u_cam_pos;             // Position of the camera
 uniform vec3 u_cam_target;             // Direction of the camera
 uniform float u_time;               // Time in seconds
 uniform vec2 u_resolution;          // Screen resolution
+uniform mat4 u_inverse_view_projection;  // Inverse view + projection matrix
 
 in vec2 eyeDirection;
 out vec4 fragColor;
@@ -146,18 +148,21 @@ vec4 march(vec3 ro, vec3 rd, float iTime) {
 
 
 void main() {
-    vec3 sunDirection = normalize(vec3(0.5, 0, 2.3));
-    vec3 viewDir = normalize(vec3(eyeDirection, 1.0));
-    
-    // Calculate the relative size of the sun based on its distance from the camera
-    float sunDistance = length(u_cam_pos - u_sun_position);
+    vec3 sunDirection = vec3(0, sin(u_time * 0.02), -cos(u_time * 0.02));
+    vec2 uv = ((gl_FragCoord.xy) / u_resolution) * 2 - 1;
+    //(2.0 * gl_FragCoord.z - gl_DepthRange.near - gl_DepthRange.far) /
+    //(gl_DepthRange.far - gl_DepthRange.near);
+    vec4 viewDirWorldH = u_inverse_view_projection * vec4(uv, gl_FragCoord.z, 1.0);
+    vec3 viewDirWorld = normalize(vec3(viewDirWorldH) / viewDirWorldH.w);
+    // vec3 viewDir = normalize(vec3(eyeDirection, 1.0));
+
     float sunSize = 0.00029;
     
     // Calculate the phase factor for sun color modulation
     float phaseFactor = 1 + 0.1 * sin(u_time * 0.5);
     
     // Calculate the dot product between view direction and sun direction
-    float dotProduct = max(dot(viewDir, sunDirection), 0.0);
+    float dotProduct = max(dot(viewDirWorld, sunDirection), 0.0);
 
     if (dotProduct > 1.0 - sunSize) { 
         // If the dot product exceeds 1 - sunSize, the sun is visible
@@ -166,13 +171,12 @@ void main() {
         // Interpolate sky color based on vertical position
         float t = gl_FragCoord.y / u_resolution.y;
         vec3 skyColor = mix(u_skyBottomColor, u_skyTopColor, t);
+        skyColor = (0.9 * pow(max(sunDirection.y + 0.1, 0), 0.25) + 0.1) * mix(skyColor, u_skySunColor, pow(2.718, -4 * (sunDirection.y + 0.1)) * dotProduct);
         
-        // Calculate UV coordinates
-        vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
-        vec2 m = u_resolution.xy / u_resolution.xy;
-        
-        // Generate ray direction
-        ray r = raydir(uv, m, u_time * 0.25);
+        /*// Generate ray direction
+        ray r;
+        r.o = u_cam_pos;
+        r.d = viewDirWorld;
         
         // Perform ray marching
         vec4 col = march(r.o, r.d, u_time * 0.25);
@@ -180,9 +184,9 @@ void main() {
         // Apply fog effect
         float fog = 0.5 - 0.5 * col.a;
         vec3 colr = col.rgb;
-        colr = mix(vec3(col.rgb) * 1.2 * exp(-0.01 * col.a * col.a), skyColor, fog);
+        colr = (0.9 * pow(max(sunDirection.y + 0.1, 0), 0.25) + 0.1) * mix(colr * 1.2 * exp(-0.01 * col.a * col.a), skyColor, fog);*/
         
         float fac = pow(2.718, 256 * (pow(dotProduct + sunSize, 2) - 1)) * phaseFactor;
-        fragColor = (1 - fac) * vec4(colr, 1.0) + fac * vec4(u_sun_color, 1.0);
+        fragColor = (1 - fac) * vec4(skyColor, 1.0) + fac * vec4(u_sun_color, 1.0);
     }
 }

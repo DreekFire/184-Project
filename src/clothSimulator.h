@@ -58,8 +58,8 @@ private:
 
   // Default simulation values
 
-  int frames_per_sec = 90;
-  int simulation_steps = 30;
+  int frames_per_sec = 40;
+  int simulation_steps = 1;
 
   CGL::Vector3D gravity = CGL::Vector3D(0, -9.8, 0);
   nanogui::Color color = nanogui::Color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -70,7 +70,7 @@ private:
 
   // OpenGL attributes
 
-  int active_shader_idx = 0;
+  int active_shader_idx = 6;
 
   vector<UserShader> shaders;
   vector<std::string> shaders_combobox_names;
@@ -101,6 +101,9 @@ private:
   GLuint m_gl_skybox_posz;
   GLuint m_gl_skybox_negz;
   GLuint m_gl_cubemap_tex;
+
+  GLuint depthTexture;
+  GLuint frameBuffer;
   
   // OpenGL customizable inputs
   
@@ -151,6 +154,8 @@ private:
   bool is_alive = true;
 
   Vector2i default_window_size = Vector2i(1024, 800);
+
+  float timeOffset = 0.0f;
 };
 
 struct UserShader {

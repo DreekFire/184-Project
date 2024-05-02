@@ -36,7 +36,7 @@ void Beest::buildBeest() {
   legModel = Jansen(
     Eigen::Matrix<float, Jansen::nCoords, 1>( 0 ),
     Eigen::Matrix<float, Jansen::nCoords, 1>( 0 ),
-    Eigen::Vector3f(0.0f, 2.0f, 0.0f),
+    Eigen::Vector3f(0.0f, 1.0f, 0.0f),
     Eigen::Matrix3f::Identity()
   );
 
