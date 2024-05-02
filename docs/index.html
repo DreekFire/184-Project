@@ -188,8 +188,11 @@
 <h1 align="middle">Final Project Report: Strandbeest Simulation</h1>
 <h1 align="middle">Derek Guo, Marcus Cheung, Pranav Kolluri, Rohan Agrawal</h1>
 
-<br><br>
-<iframe style="display: block; margin: 0 auto;" width="560" height="315" src="https://www.youtube.com/embed/PgYoOI-d0kQ?si=lcJL-BD5la8Nx04O" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<br>
+<h2 align="center">Video Report</h2>
+<center>(May not load on Firefox)</center>
+<br>
+<iframe style="display: block; margin: 0 auto;" width="560" height="315" src="https://www.youtube.com/embed/PgYoOI-d0kQ?si=lcJL-BD5la8Nx04O?html5=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen allow-same-origin></iframe>
 
 <div>
 
@@ -247,7 +250,7 @@
     <p>$\frac{dp}{dq}^T \frac{dp}{dq} \ddot{q} = -\frac{dV}{dq} - ((\frac{d}{dt} \frac{dp}{dq})^T \frac{dp}{dq} + \frac{dp}{dq}^T (\frac{d}{dt} \frac{dp}{dq}))\dot{q}$</p>
 
     <p>
-      As mentioned before, external and fictitious forces are implemented as potential gradients in the positions of the corresponding point masses, so $-\frac{dV}{dq} = \frac{dp}{dq}^T F$. As an interesting observation, when a force $F$ is applied, it results in the point masses accelerating by $\frac{dp}{dq} (\frac{dp}{dq}^T \frac{dp}{dq})^{-1} \frac{dp}{dq}^T F$, which is exactly the projection of $F$ onto the columns of $\frac{dp}{dq}$. Intuitively, this the motion caused by the force is the projection of the force onto the directions in which the system is free to move.
+      As mentioned before, external and fictitious forces are implemented as potential gradients in the positions of the corresponding point masses, so $-\frac{dV}{dq} = \frac{dp}{dq}^T F$. As an interesting observation, when a force $F$ is applied, it results in the point masses accelerating by $\frac{dp}{dq} (\frac{dp}{dq}^T \frac{dp}{dq})^{-1} \frac{dp}{dq}^T F$, which is exactly the projection of $F$ onto the columns of $\frac{dp}{dq}$. Intuitively, the motion caused by the force is the projection of the force onto the directions in which the system is free to move.
     </p>
   </div>
   
@@ -268,11 +271,11 @@
 
   <div>
     <p>
-      The extrinsic coordinates are calculated using conservation of momentum. Extrinsic translational momentum is updated as if all external forces had been applied to the center of mass. We update the extrinsic angular momentum such that the total angular momentum is conserved. This effectively applies an Euler force which explains any change in internal angular momentum. At first, we attempted to include rotation and translation in our generalized coordinates. For translation, this is very easy as $\frac{dp}{dt}$ just contains copies of the identity matrix, and $\frac{d}{dt} \frac{dp}{dt} = 0$. However, it is extremely difficult for rotation, as no matter which of many available representations of rotations we choose, the expressiosn for the relevant derivatives of $p(q)$ are very messy. Additionally, rotations are not additive, so there is further hassle in expressing them as generalized coordinates and velocities. We were surprised to learn that the derivative of the rotation vector (a vector pointing along the axis of rotation, with its magnitude as the rotation angle) is not the angular velocity.
+      The extrinsic coordinates are calculated using conservation of momentum. Extrinsic translational momentum is updated as if all external forces had been applied to the center of mass. We update the extrinsic angular momentum such that the total angular momentum is conserved. This effectively applies an Euler force which explains any change in internal angular momentum. At first, we attempted to include rotation and translation in our generalized coordinates. For translation, this is very easy as $\frac{dp}{dt}$ just contains copies of the identity matrix, and $\frac{d}{dt} \frac{dp}{dt} = 0$. However, it is extremely difficult for rotation, as no matter which of many available representations of rotations we choose, the expressions for the relevant derivatives of $p(q)$ are very messy. Additionally, rotations are not additive, so there is further hassle in expressing them as generalized coordinates and velocities. We were surprised to learn that the derivative of the rotation vector (a vector pointing along the axis of rotation, with its magnitude as the rotation angle) is not the angular velocity.
     </p>
 
     <p>
-      After calculating the state evolution based on internal dynamics, we update the position of each point and check for collisions. Since our desert is represented by a height map, we can easily find the triangle directly below each point and check if the point is on the top side of it. For points beneath the surface, we add a constraint $\sigma_i = 0$, where $\sigma_i$ is the distance of the point above the surface. Each collision applies a force $f_i = \lambda_i \frac{d \sigma_i}{d p_i}$. We calculate a Jacobian matrix $\frac{d\sigma_i}{d\lambda_i}$ using the equations of motion calculated before, where entry $(i, j)$ describes the amount by which force $j$ contributes to moving point $i$ out of the ground. We then solve for $J \lambda = -\sigma$ to determine the constraint forces. However, this keeps the points constrained to the ground, but we only collisions to push. Therefore, if this solution contains any negative elements in $\lambda$, we remove the corresponding rows and columns and repeat until $\lambda$ is entirely positive or empty. This is somewhat of an ad-hoc approach in lieu of a proper mixed linear complementarity solver, but works acceptably for a small number of contact points.
+      After calculating the state evolution based on internal dynamics, we update the position of each point and check for collisions. Since our desert is represented by a height map, we can easily find the triangle directly below each point and check if the point is on the top side of it. For points beneath the surface, we add a constraint $\sigma_i = 0$, where $\sigma_i$ is the distance of the point above the surface. Each collision applies a force $f_i = \lambda_i \frac{d \sigma_i}{d p_i}$. We calculate a Jacobian matrix $\frac{d\sigma_i}{d\lambda_i}$ using the equations of motion calculated before, where entry $(i, j)$ describes the amount by which force $j$ contributes to moving point $i$ out of the ground. We then solve for $J \lambda = -\sigma$ to determine the constraint forces. However, this keeps the points constrained to the ground, while we only want collisions to push. Therefore, if this solution contains any negative elements in $\lambda$, we remove the corresponding rows and columns and repeat until $\lambda$ is entirely positive or empty. This is somewhat of an ad-hoc approach in lieu of a proper mixed linear complementarity solver, but works acceptably for a small number of contact points.
     </p>
 
     <p>
@@ -395,8 +398,8 @@
 5. <a href="https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula">Rodrigues' Rotation Formula</a><br>
 6. <a href="https://en.wikipedia.org/wiki/Perlin_noise">Perlin Noise</a><br>
 7. <a href="https://www.alanzucconi.com/2019/10/08/journey-sand-shader-1/">Journey Sand Shader</a><br>
-8. <a href="https://eigen.tuxfamily.org/">Eigen</a>
-9. <a href="https://cs184.eecs.berkeley.edu/sp24/docs/hw4">CS 184 HW 4: ClothSim</a>
+8. <a href="https://eigen.tuxfamily.org/">Eigen</a><br>
+9. <a href="https://cs184.eecs.berkeley.edu/sp24/docs/hw4">CS 184 HW 4: ClothSim</a><br>
 
 <h1 align="middle">Individual Contributions</h1>
 <h3>Derek</h3>
