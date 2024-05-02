@@ -16,7 +16,7 @@ void main() {
   vec3 l = vec3(0.0, sin(u_time * 0.02), -cos(u_time * 0.02));
 
   // arbitrary diffuse coefficient
-  float k_d = 0.6;
+  float k_d = 0.5;
 
   // arbitrary ambient coefficient
   float k_a = (0.2 * pow(max(l.y + 0.1, 0), 0.25) + 0.1);
@@ -31,6 +31,7 @@ void main() {
   vec3 n = normalize(vec3(v_normal));
   float cos_theta_nl = dot(n, l);
   cos_theta_nl = max(0, cos_theta_nl);
+  cos_theta_nl += max(0, 0.2 * n.y);
 
   // calculate cos_theta_nh, first find h
   vec3 h = l + normalize(u_cam_pos - vec3(v_position));
