@@ -3,8 +3,8 @@
 
 #include <vector>
 #include <CGL/vector3D.h>
-#include <Eigen/Dense>
-#include <Eigen/Core>
+#include "../../ext/eigen-3.4.0/Eigen/Dense"
+#include "../../ext/eigen-3.4.0/Eigen/Core"
 #include "../collision/collisionObject.h"
 
 typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> MatrixF;
