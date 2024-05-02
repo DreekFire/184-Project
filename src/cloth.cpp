@@ -33,11 +33,17 @@ void Beest::buildBeest() {
     spheres.push_back(Sphere(Vector3D(0), 0.005, 0));
   }
 
+  Matrix3f rot = Matrix3f::Identity();
+  // flip the x axis and z axis
+  rot(0, 0) = -1;
+  rot(2, 2) = -1;
+
+
   legModel = Jansen(
     Eigen::Matrix<float, Jansen::nCoords, 1>( 0 ),
     Eigen::Matrix<float, Jansen::nCoords, 1>( 0 ),
     Eigen::Vector3f(0.0f, 1.0f, 0.0f),
-    Eigen::Matrix3f::Identity()
+    rot
   );
 
   std::vector<CGL::Vector3D> positions = legModel.positions;
