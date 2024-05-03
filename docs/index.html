@@ -368,14 +368,12 @@
 <div class="section">
   <p>
     For the sun, we implemented a dynamic rendering approach. A point is positioned in world space and adjusted dynamically based on the camera's perspective. This ensures proper alignment with the viewer's line of sight, making the sun appear fixed in the sky. In the fragment shader, by evaluating the dot product between the camera's position and the sun's direction, we determine the angle between the sun and the current pixel, allowing for realistic lighting effects.
+    To render the glow around the sun, we used an exponential distribution of light points around the sun. This creates a radiant effect, simulating the sun's natural glow. Lastly, to simulate the effect of the sun on the sky, we added gradients based on the angle of the pixel from the sun and the angle of the sun in the sky. 
     <br/>
     <br/>
   
-    Our cloud generation method utilizes value noise, a technique for creating natural-looking textures. We apply Fractal Brownian Motion, stacking multiple layers of noise to create pseudorandom and realistic cloud patterns. This process results in detailed and realistic cloud and fog formations in the sky.
+    Our cloud generation method utilizes Perlin noise, a technique for creating natural-looking textures. We stack multiple layers of noise to create pseudorandom and realistic cloud patterns. This process results in detailed and realistic cloud and fog formations in the sky.
     <br/>
-    <br/>
-  
-    Additionally, the scene rendering incorporates ray marching techniques to simulate atmospheric effects and depth. By iteratively advancing along the ray direction and evaluating the scene function, we generate the final color output. This approach enables the simulation of complex atmospheric interactions, contributing to the overall realism of the sky rendering.
   </p>
   <div class="right">
       <img src="images/sky_scene.png" alt="Our test environment with the sand shader, dune mesh, an a sky shader with a radiant sun and clouds">
